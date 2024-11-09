@@ -1,39 +1,43 @@
 #ifndef ORDERMANAGER_H
 #define ORDERMANAGER_H
 
+#include <thread>
+#include <atomic>
 #include "Order.h"
 #include "OrderBook.h"
 #include "MatchingEngine.h"
+#include "../utility/include/MessageQueue.h"
+#include "../utility/include/Message.hpp"
 #include "../utility/include/IDGenerator.hpp"
-
-enum class MessageType {
-    NEW_ORDER,
-    MODIFY_ORDER,
-    CANCEL_ORDER
-};
-
-struct OrderMessage {
-    MessageType type;
-    std::shared_ptr<Order> order; // 对于新增订单
-    unsigned int orderId;         // 对于修改和取消订单
-    double newPrice;              // 对于修改订单
-    int newQuantity;              // 对于修改订单
-};
 
 class OrderManager
 {
     // Constructor
-    OrderManager(MatchingEngine* engine);
+    OrderManager(MatchingEngine* engine, MessageQueue& messageQueue);
 
-    // Process New Order Message
-    void handleNewOrder(Order* order);
+    // Begin processing messages from the messageQueue
+    void start();
 
-    // Process modification message
+    // Stop Processing Orders from the messageQueue
+    void stop();
 
-    // Process cancel message
-    
 private:
-    MatchingEngine* matchingEngine;
+    MatchingEngine* matchingEngine; // Matching Engine pointer
+    MessageQueue* messageQueue;     // Reference to message queue
+
+    std::thread processingThread;      // Thread for processing messages
+    std::atomic<bool> running;         // Flag to control message processing loop
+
+    // Messages processing loop
+    void processMessages();
+
+    void handleMessage(Message* message);
+
+    void handleAddMessage(Message* message);
+
+    void handleModifyMessage(Message* message);
+
+    void handleCancelMessage(Message* message);
 
 };
 

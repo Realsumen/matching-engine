@@ -1,3 +1,6 @@
-/.vscode
-/build
+# Build and Output directories
+/build/
 GPT*
+
+# IDE specific files
+.vscode/
