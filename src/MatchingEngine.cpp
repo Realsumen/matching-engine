@@ -42,7 +42,7 @@ void MatchingEngine::removeOrderBook(const std::string &instrument)
     }
 }
 
-std::vector<Trade> MatchingEngine::processOrder(Order *order)
+std::vector<Trade> MatchingEngine::processNewOrder(Order *order)
 {
     // All the trades happened
     std::vector<Trade> trades;

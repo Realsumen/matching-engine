@@ -1,5 +1,6 @@
 #include <iostream>
 #include "utility/include/TimestampUtility.h"
+#include "utility/include/OrderType.h"
 #include "Order.h"
 
 Order::Order(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy, OrderType type)
@@ -10,7 +11,7 @@ Order::Order(unsigned int id, const std::string &asset, double price, int quanti
     {
         this->price = price;
     }
-    else if (type != MARKET)
+    else if (type != OrderType::MARKET)
     {
         throw std::invalid_argument("Price must be greater than zero.");
     }
@@ -117,17 +118,17 @@ bool Order::operator<(const Order &other) const
     return flag;
 }
 
-Order Order::CreateMarketOrder(unsigned int id, const std::string &asset, int quantity, bool is_buy)
+Order* Order::CreateMarketOrder(unsigned int id, const std::string &asset, int quantity, bool is_buy)
 {
-    return Order(id, asset, -1.0, quantity, is_buy, OrderType::MARKET);
+    return new Order(id, asset, -1.0, quantity, is_buy, OrderType::MARKET);
 }
 
-Order Order::CreateLimitOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy)
+Order* Order::CreateLimitOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy)
 {
-    return Order(id, asset, price, quantity, is_buy, OrderType::MARKET);
+    return new Order(id, asset, price, quantity, is_buy, OrderType::MARKET);
 }
 
-Order Order::CreateStopOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy)
+Order* Order::CreateStopOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy)
 {
-    return Order(id, asset, price, quantity, is_buy, OrderType::STOP);
+    return new Order(id, asset, price, quantity, is_buy, OrderType::STOP);
 }

@@ -4,8 +4,8 @@
 
 ## TODO LIST
 
-1. orderManager 设计
-2. 前端模拟
+1. 添加matchingEngine 完善lastTradedPrice的功能
+2. 在main.cpp中做前端的简单模拟
 3. 测试
 4. 为止损单做准备，观察者模块的设计
 5. 止损单的逻辑实现，在 `OrderBook` 中引入回调接口

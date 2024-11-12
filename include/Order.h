@@ -25,9 +25,9 @@ public:
     bool operator==(const Order &other) const;
     bool operator<(const Order &other) const;
 
-    static Order CreateLimitOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy);
-    static Order CreateMarketOrder(unsigned int id, const std::string &asset, int quantity, bool is_buy);
-    static Order CreateStopOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy);
+    static Order *CreateLimitOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy);
+    static Order *CreateMarketOrder(unsigned int id, const std::string &asset, int quantity, bool is_buy);
+    static Order *CreateStopOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy);
 
 private:
     unsigned int id;  // order ID

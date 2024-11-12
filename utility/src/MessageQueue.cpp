@@ -19,6 +19,7 @@ void MessageQueue::push(Message&& msg) {
 }
 
 bool MessageQueue::pop(Message& msg) {
+    // The incoming parameter msg is used to store the information popped out of the queue
     std::unique_lock<std::mutex> lock(m_mutex);
     m_condVar.wait(lock, [this]() { return !m_queue.empty(); }); // Block and wait until the queue is not empty
 
@@ -31,6 +32,7 @@ bool MessageQueue::pop(Message& msg) {
 }
 
 bool MessageQueue::tryPop(Message& msg) {
+    // The incoming parameter msg is used to store the information popped out of the queue
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_queue.empty()) {
         return false;

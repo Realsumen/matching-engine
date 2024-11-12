@@ -27,18 +27,20 @@ struct AddOrderDetails {
 // Details for ModifyOrder
 struct ModifyOrderDetails {
     unsigned int orderId;
+    std::string instrument;
     double newPrice;
     int newQuantity;
 
-    ModifyOrderDetails(unsigned int id, double price, int qty)
-        : orderId(id), newPrice(price), newQuantity(qty) {}
+    ModifyOrderDetails(unsigned int id, std::string instrument, double price, int qty)
+        : orderId(id), instrument(instrument), newPrice(price), newQuantity(qty) {}
 };
 
 // Details for Cancel Order
 struct CancelOrderDetails {
     unsigned int orderId;
+    std::string instrument;
 
-    CancelOrderDetails(unsigned int id) : orderId(id) {}
+    CancelOrderDetails(unsigned int id, std::string instrument) : orderId(id), instrument(instrument) {}
 };
 
 // 定义消息结构体
@@ -56,17 +58,17 @@ struct Message {
         return msg;
     }
 
-    static Message createModifyOrder(unsigned int orderId, double newPrice, int newQuantity) {
+    static Message createModifyOrder(unsigned int orderId, std::string instrument, double newPrice, int newQuantity) {
         Message msg;
         msg.type = MessageType::MODIFY_ORDER;
-        msg.modifyDetails = std::make_unique<ModifyOrderDetails>(orderId, newPrice, newQuantity);
+        msg.modifyDetails = std::make_unique<ModifyOrderDetails>(orderId, newPrice, newQuantity, instrument);
         return msg;
     }
 
-    static Message createCancelOrder(unsigned int orderId) {
+    static Message createCancelOrder(unsigned int orderId, std::string instrument) {
         Message msg;
         msg.type = MessageType::CANCEL_ORDER;
-        msg.cancelDetails = std::make_unique<CancelOrderDetails>(orderId);
+        msg.cancelDetails = std::make_unique<CancelOrderDetails>(orderId, instrument);
         return msg;
     }
 };

@@ -23,7 +23,7 @@ public:
     void removeOrderBook(const std::string &instrument);
 
     // Process New Orders
-    std::vector<Trade> processOrder(Order *order);
+    std::vector<Trade> processNewOrder(Order *order);
 
     // Cancel an order
     void cancelOrder(unsigned int orderId, const std::string &instrument);

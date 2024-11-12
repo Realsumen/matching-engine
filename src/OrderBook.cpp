@@ -134,7 +134,7 @@ void OrderBook::modifyLimitOrder(unsigned int orderId, double newPrice, int newQ
 
     // If the modification change the order price, 
     // we cancel the original order and create a new one
-    Order *neworder = &Order::CreateLimitOrder(orderId, order->getAsset(), newPrice, newQuantity, order->isBuy());
+    Order *neworder = Order::CreateLimitOrder(orderId, order->getAsset(), newPrice, newQuantity, order->isBuy());
     cancelLimitOrder(orderId);
     addLimitOrderToBook(order);
 }

@@ -23,21 +23,19 @@ class OrderManager
 
 private:
     MatchingEngine* matchingEngine; // Matching Engine pointer
-    MessageQueue* messageQueue;     // Reference to message queue
+    MessageQueue& messageQueue;     // Reference to message queue
 
-    std::thread processingThread;      // Thread for processing messages
-    std::atomic<bool> running;         // Flag to control message processing loop
+    std::thread messageProcessingThread;      // Thread for processing messages
+    std::atomic<bool> managerRunning{false};         // Flag to control message processing loop
 
     // Messages processing loop
-    void processMessages();
+    void processLoop();
 
-    void handleMessage(Message* message);
+    void handleAddMessage(const Message& message);
 
-    void handleAddMessage(Message* message);
+    void handleModifyMessage(const Message& message);
 
-    void handleModifyMessage(Message* message);
-
-    void handleCancelMessage(Message* message);
+    void handleCancelMessage(const Message& message);
 
 };
 
