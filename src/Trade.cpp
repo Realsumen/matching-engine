@@ -2,7 +2,7 @@
 #include <chrono>
 #include <sstream>
 #include "Trade.h"
-#include "utility/include/TimestampUtility.h"
+#include "TimestampUtility.h"
 
 Trade::Trade(int trade_id, int buy_order_id, int sell_order_id, const std::string asset, double price, int quantity):
 trade_id(trade_id), buy_order_id(buy_order_id), sell_order_id(sell_order_id), 

@@ -3,7 +3,7 @@
 
 #include <chrono>
 #include <string>
-#include "utility/include/OrderType.h"
+#include "OrderType.h"
 
 class Order {
 public:

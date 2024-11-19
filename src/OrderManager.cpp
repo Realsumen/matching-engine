@@ -6,9 +6,9 @@
 #include "OrderBook.h"
 #include "MatchingEngine.h"
 #include "OrderManager.h"
-#include "../utility/include/MessageQueue.h"
-#include "../utility/include/Message.hpp"
-#include "../utility/include/IDGenerator.hpp"
+#include "MessageQueue.h"
+#include "Message.hpp"
+#include "IDGenerator.hpp"
 
 OrderManager::OrderManager(MatchingEngine* engine, MessageQueue& queue)
     : matchingEngine(engine), messageQueue(queue){}
@@ -78,6 +78,7 @@ void OrderManager::handleAddMessage(const Message &message)
     }
 
     matchingEngine->processNewOrder(newOrder);
+
 }
 
 void OrderManager::handleModifyMessage(const Message &message)

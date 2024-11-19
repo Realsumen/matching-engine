@@ -61,7 +61,7 @@ struct Message {
     static Message createModifyOrder(unsigned int orderId, std::string instrument, double newPrice, int newQuantity) {
         Message msg;
         msg.type = MessageType::MODIFY_ORDER;
-        msg.modifyDetails = std::make_unique<ModifyOrderDetails>(orderId, newPrice, newQuantity, instrument);
+        msg.modifyDetails = std::make_unique<ModifyOrderDetails>(orderId, instrument, newPrice, newQuantity);
         return msg;
     }
 

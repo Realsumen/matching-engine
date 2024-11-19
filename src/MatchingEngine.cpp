@@ -5,9 +5,9 @@
 #include "Trade.h"
 #include "Order.h"
 #include "OrderBook.h"
-#include "utility/include/IDGenerator.hpp"
-#include "utility/include/OrderType.h"
-#include "utility/include/TimestampUtility.h"
+#include "IDGenerator.hpp"
+#include "OrderType.h"
+#include "TimestampUtility.h"
 
 MatchingEngine::MatchingEngine()
 {
@@ -67,6 +67,8 @@ std::vector<Trade> MatchingEngine::processNewOrder(Order *order)
         throw std::invalid_argument("Unknown Order Type.");
     }
 
+    // Add trade records
+    this->trades.insert(this->trades.end(), trades.begin(), trades.end());
     return trades;
 }
 
@@ -164,7 +166,7 @@ std::vector<Trade> MatchingEngine::processMarketOrder(Order *order)
 
     delete order;
 
-    return;
+    return trades;
 }
 
 std::vector<Trade> MatchingEngine::processStopOrder(Order *order)
@@ -288,6 +290,8 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
 
     // Update the quantity for the order
     order->setQuantity(remainingQuantity);
+    // Update the Latest price for the instrument
+    instrumentToTradedPrice[instrument] = trades.back().getPrice();
 
     return trades;
 }

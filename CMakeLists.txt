@@ -2,52 +2,57 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Project name and version
-project(MatchingEngine VERSION 1.0)
+project(MatchingEngine VERSION 0.1)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Find required packages
+find_package(spdlog REQUIRED)
+find_package(GTest REQUIRED)
+
 # Add utility files
-file(GLOB UTILITY_SOURCES "utility/src/*.cpp")
-
+file(GLOB UTILITY_SOURCES "utility/src/*.cpp" "utility/include/*.hpp")
 add_library(utility_lib ${UTILITY_SOURCES})
-
 target_include_directories(utility_lib PUBLIC utility/include)
 
-# Add source files
+# Add source files excluding main.cpp
 file(GLOB MAIN_SOURCES "src/*.cpp")
+list(REMOVE_ITEM MAIN_SOURCES "src/main.cpp")  # Remove the executable file to prevent repeating include
+add_library(matching_engine_lib ${MAIN_SOURCES})
+target_include_directories(matching_engine_lib PUBLIC include utility/include)
+target_link_libraries(matching_engine_lib PRIVATE utility_lib spdlog::spdlog)
 
-# Add executable target with source files
-add_executable(matching_engine main.cpp ${MAIN_SOURCES})
+# Main executable
+add_executable(matching_engine src/main.cpp)
+target_link_libraries(matching_engine PRIVATE matching_engine_lib spdlog::spdlog)
 
-target_include_directories(matching_engine PUBLIC include)
-
-# Link utility library
-target_link_libraries(matching_engine utility_lib)
-
-# Set output directories
+# Set output directories for main executable
 set_target_properties(matching_engine PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
-# Add custom flags if necessary (example: warnings)
+# Add custom flags for main executable
 target_compile_options(matching_engine PRIVATE -Wall -Wextra -Werror)
 
 # Add test executable
-add_executable(test tests/test.cpp ${MAIN_SOURCES})
-
-# Link utility library
-target_link_libraries(test utility_lib)
-
-# Set output directories for the test executable
-set_target_properties(test PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+file(GLOB TEST_SOURCES "tests/*.cpp")
+add_executable(tests ${TEST_SOURCES})
+target_link_libraries(tests
+    matching_engine_lib
+    utility_lib
+    GTest::GTest
+    # GTest::Main # A main function is already defined in Main.cpp
+    spdlog::spdlog
 )
 
-# Add custom flags for test if necessary
-target_compile_options(test PRIVATE -Wall -Wextra -Werror)
+# Add custom flags for tests (without -Werror to prevent build failure on warnings)
+target_compile_options(tests PRIVATE -Wall -Wextra)
+
+# Enable testing
+enable_testing()
+add_test(NAME MatchingEngineTest COMMAND tests)
+

@@ -6,9 +6,9 @@
 #include "Order.h"
 #include "OrderBook.h"
 #include "MatchingEngine.h"
-#include "../utility/include/MessageQueue.h"
-#include "../utility/include/Message.hpp"
-#include "../utility/include/IDGenerator.hpp"
+#include "MessageQueue.h"
+#include "Message.hpp"
+#include "IDGenerator.hpp"
 
 class OrderManager
 {

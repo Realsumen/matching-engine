@@ -1,6 +1,6 @@
 #include <iostream>
-#include "utility/include/TimestampUtility.h"
-#include "utility/include/OrderType.h"
+#include "TimestampUtility.h"
+#include "OrderType.h"
 #include "Order.h"
 
 Order::Order(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy, OrderType type)
