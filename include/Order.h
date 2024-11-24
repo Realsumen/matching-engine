@@ -7,6 +7,7 @@
 
 class Order {
 public:
+
     Order(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy, OrderType type);
 
     void setPrice(double new_price);
@@ -18,7 +19,7 @@ public:
     std::string getAsset() const;
     bool isBuy() const;               // Getter for is_buy
     OrderType getType() const;        // Getter for type
-    std::chrono::time_point<std::chrono::high_resolution_clock> getTimestamp() const; // Getter for timestamp
+    std::chrono::system_clock::time_point getTimestamp() const; // Getter for timestamp
 
     void displayOrderInfo() const;
 
@@ -36,7 +37,7 @@ private:
     int quantity;      // quantity
     bool is_buy;       // whether it is a buy order
     OrderType type;    // order type
-    std::chrono::time_point<std::chrono::high_resolution_clock> timestamp; // timestamp
+    std::chrono::system_clock::time_point timestamp; // timestamp
 };
 
 #endif // ORDER_H

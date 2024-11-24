@@ -27,7 +27,7 @@ public:
     int getQuantity() const;
     TradeStatus getBuyOrderStatus() const;
     TradeStatus getSellOrderStatus() const;
-    std::chrono::time_point<std::chrono::high_resolution_clock> getTimestamp() const;
+    std::chrono::system_clock::time_point getTimestamp() const;
 
     void setBuyOrderStatus(TradeStatus status); // 设置买单状态
     void setSellOrderStatus(TradeStatus status); // 设置卖单状态
@@ -40,7 +40,7 @@ private:
     std::string asset;
     double price;
     int quantity;
-    std::chrono::time_point<std::chrono::high_resolution_clock> timestamp;
+    std::chrono::system_clock::time_point timestamp;
     TradeStatus buyOrderStatus;
     TradeStatus sellOrderStatus;
 };

@@ -1,6 +1,16 @@
 # Minimum CMake version required
 cmake_minimum_required(VERSION 3.10)
 
+# Add Debug Option
+option(DEBUG "Debug Mode" OFF)
+
+if(DEBUG)
+    message(STATUS "Debug Mode enabled")
+    if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+    endif()
+endif()
+
 # Project name and version
 project(MatchingEngine VERSION 0.1)
 
@@ -38,8 +48,17 @@ set_target_properties(matching_engine PROPERTIES
 # Add custom flags for main executable
 target_compile_options(matching_engine PRIVATE -Wall -Wextra -Werror)
 
+# Addx ASan Option
+option(USE_ASAN "Enable AddressSanitizer" OFF)
+
+if(USE_ASAN)
+    message(STATUS "AddressSanitizer enabled")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+    set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
+endif()
+
 # Add test executable
-file(GLOB TEST_SOURCES "tests/*.cpp")
+file(GLOB TEST_SOURCES "tests/*.cpp" "tests/*/*.cpp")
 add_executable(tests ${TEST_SOURCES})
 target_link_libraries(tests
     matching_engine_lib

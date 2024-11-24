@@ -4,59 +4,62 @@
 #include <sstream>
 #include <string>
 
-std::string timestampToString(const std::chrono::time_point<std::chrono::high_resolution_clock> &timestamp)
+std::string timestampToString(const std::chrono::system_clock::time_point &timestamp)
 {
     // Alter the timestamp to seconds and nanoseconds since the epoch
-    auto seconds = std::chrono::time_point_cast<std::chrono::seconds>(timestamp).time_since_epoch();
-    auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(timestamp.time_since_epoch()) % 1'000'000'000;
+    std::time_t time = std::chrono::system_clock::to_time_t(timestamp);
 
-    // Using system_clock to obtain time
-    auto systemTime = std::chrono::time_point<std::chrono::system_clock>(seconds);
-    std::time_t time = std::chrono::system_clock::to_time_t(systemTime);
+    // Extract nanoseconds
+    auto duration = timestamp.time_since_epoch();
+    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+    auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - seconds);
 
-    // Format to y-m-d H-M-S
+    std::tm tm_time;
+#if defined(_WIN32) || defined(_WIN64)
+    localtime_s(&tm_time, &time); // Thread-safe on Windows
+#else
+    localtime_r(&time, &tm_time); // Thread-safe on POSIX
+#endif
+
     std::ostringstream oss;
-    oss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
+    oss << std::put_time(&tm_time, "%Y-%m-%d %H:%M:%S");
 
-    // add nanosceonds
     oss << '.' << std::setw(9) << std::setfill('0') << nanoseconds.count();
 
     return oss.str();
 }
 
-std::chrono::time_point<std::chrono::high_resolution_clock> currentTimestamp()
+std::chrono::system_clock::time_point currentTimestamp()
 {
-    return std::chrono::high_resolution_clock::now();
+    return std::chrono::system_clock::now();
 }
 
-double durationInNanoseconds(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
-                              const std::chrono::time_point<std::chrono::high_resolution_clock> &end)
+double durationInNanoseconds(const std::chrono::system_clock::time_point &start,
+                             const std::chrono::system_clock::time_point &end)
 {
     return std::chrono::duration<double, std::nano>(end - start).count();
 }
 
-
-
-double durationInMilliseconds(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
-                              const std::chrono::time_point<std::chrono::high_resolution_clock> &end)
+double durationInMilliseconds(const std::chrono::system_clock::time_point &start,
+                              const std::chrono::system_clock::time_point &end)
 {
     return std::chrono::duration<double, std::milli>(end - start).count();
 }
 
-double durationInSeconds(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
-                              const std::chrono::time_point<std::chrono::high_resolution_clock> &end)
+double durationInSeconds(const std::chrono::system_clock::time_point &start,
+                         const std::chrono::system_clock::time_point &end)
 {
     return std::chrono::duration<double>(end - start).count();
 }
 
-bool isTimestampBefore(const std::chrono::time_point<std::chrono::high_resolution_clock> &lhs,
-                       const std::chrono::time_point<std::chrono::high_resolution_clock> &rhs)
+bool isTimestampBefore(const std::chrono::system_clock::time_point &lhs,
+                       const std::chrono::system_clock::time_point &rhs)
 {
     return lhs < rhs;
 }
 
-bool isTimestampAfter(const std::chrono::time_point<std::chrono::high_resolution_clock> &lhs,
-                      const std::chrono::time_point<std::chrono::high_resolution_clock> &rhs)
+bool isTimestampAfter(const std::chrono::system_clock::time_point &lhs,
+                      const std::chrono::system_clock::time_point &rhs)
 {
     return lhs > rhs;
 }

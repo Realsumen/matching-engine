@@ -22,19 +22,19 @@ public:
     void addOrderBook(const std::string &instrument);
     void removeOrderBook(const std::string &instrument);
 
-    // Process New Orders
     std::vector<Trade> processNewOrder(Order *order);
 
-    // Cancel an order
     void cancelOrder(unsigned int orderId, const std::string &instrument);
 
-    // Modify an order
     void modifyOrder(unsigned int orderId, const std::string &instrument, double newPrice, int newQuantity);
 
-    // Get all trade records
     std::vector<Trade> getTrades() const;
 
     double getLastTradePrice(const std::string &instrument);
+
+    const OrderBook *getOrderBookForRead(const std::string &instrument) const;
+
+    bool hasOrder(std::string instrument, unsigned int orderId);
 
 private:
 
@@ -54,7 +54,6 @@ private:
 
     std::vector<Trade> matchOrder(Order *order);
 
-    // Get the order book for a specific trading instrument
     OrderBook *getOrderBook(const std::string &instrument);
 
 };

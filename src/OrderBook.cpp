@@ -43,6 +43,10 @@ OrderBook::OrderBook(const std::string &instrument) : instrument(instrument), be
     // Initializes timer or other resources for cleanup
 }
 
+void OrderBook::setCrossCallback(CrossCallback callback) {
+    crossCallback = callback;
+}
+
 OrderBook::~OrderBook()
 {
     // release all the OrderNode and PriceLevel in the buyside
@@ -120,23 +124,28 @@ void OrderBook::modifyLimitOrder(unsigned int orderId, double newPrice, int newQ
         return;
     }
 
-    double oldPrice = order->getPrice();
-    int oldQuantity = order->getQuantity();
     
-    order->setQuantity(newQuantity);
-
     if (newPrice == order->getPrice()){
-       // If the price is unchanged, just update the quantity in the priceLevel
+       // If the price is unchanged, just update the quantity of the order and the priceLevel
+        double oldPrice = order->getPrice();
+        int oldQuantity = order->getQuantity();
+    
+        order->setQuantity(newQuantity);
         PriceLevel* priceLevel = priceToPriceLevel[oldPrice];
         priceLevel->totalQuantity += (newQuantity - oldQuantity);
         return;
     }
 
-    // If the modification change the order price, 
-    // we cancel the original order and create a new one
-    Order *neworder = Order::CreateLimitOrder(orderId, order->getAsset(), newPrice, newQuantity, order->isBuy());
+    // Price is changed, we cancel the original order and create a new one
+    std::string asset =  order->getAsset();
+    bool isBuy = order->isBuy();
     cancelLimitOrder(orderId);
-    addLimitOrderToBook(order);
+    Order *newOrder = Order::CreateLimitOrder(orderId, asset, newPrice, newQuantity, isBuy);
+    if (crossCallback) 
+    { 
+        std::cout << "this is a call back" << std::endl;
+        crossCallback(newOrder);
+    }
 }
 
 void OrderBook::modifyStopOrder(unsigned int orderId, double newPrice, int newQuantity)
@@ -163,7 +172,7 @@ Order *OrderBook::getBestAsk() const
 
 void OrderBook::printOrderBook() const
 {
-    std::cout << "----- Order Book for " << instrument << " ------\n";
+    std::cout << "****----- Order Book for " << instrument << " ------****\n";
 
     // Print all the ask levels, from low to high;
     std::cout << "Asks:\n";
@@ -174,14 +183,17 @@ void OrderBook::printOrderBook() const
     }
 
     // Print all the bid levels, from high to low;
+    std::cout << "----------------------------\n";
     std::cout << "Bids:\n";
+    std::cout << "----------------------------\n";
+
     const PriceLevel* bidLevel = bestBidLevel;
     while (bidLevel != nullptr) {
         printPriceLevel(bidLevel, 1);
         bidLevel = bidLevel -> nextPrice;
     }
 
-    std::cout << "----------------------------";
+    std::cout << "----------------------------\n";
 }
 
 void OrderBook::printOrderBook(double minPrice, double maxPrice) const
@@ -196,6 +208,10 @@ void OrderBook::printOrderBook(double minPrice, double maxPrice) const
         }
         askLevel = askLevel -> nextPrice;
     }
+
+    std::cout << "----------------------------\n";
+    std::cout << "Bids:\n";
+    std::cout << "----------------------------\n";
 
     const PriceLevel* bidLevel = bestBidLevel;
     while (bidLevel != nullptr) {
@@ -212,7 +228,6 @@ void OrderBook::printOrderBook(int depth) const
 {
     std::cout << "----- Order Book for " << instrument << " ------\n";
 
-    // Print all the ask levels, from low to high;
     std::cout << "Asks:\n";
     unsigned int currentAskDepth = 1;
     const PriceLevel* askLevel = bestAskLevel;
@@ -222,8 +237,10 @@ void OrderBook::printOrderBook(int depth) const
         ++currentAskDepth;
     }
 
-    // Print all the bid levels, from high to low;
+    std::cout << "----------------------------\n";
     std::cout << "Bids:\n";
+    std::cout << "----------------------------\n";
+
     unsigned int currentBidDepth = 1;
     const PriceLevel* bidLevel = bestBidLevel;
     while ((bidLevel != nullptr) && (currentBidDepth <= depth)) {
@@ -232,41 +249,43 @@ void OrderBook::printOrderBook(int depth) const
         ++currentBidDepth;
     }
 
-    std::cout << "----------------------------";
-
+    std::cout << "----------------------------\n";
 }
 
 void OrderBook::addPriceLevel(PriceLevel *priceLevel, PriceLevel *&bestLevel)
 {
     PriceLevel *prevPrice = nullptr;
     PriceLevel *nextPrice = bestLevel;
-    bool isBuy = (bestLevel->side) == Side::BUY;
 
+    bool isBuy = (priceLevel->side) == Side::BUY;
+
+    // This while loop is to find the appropriate prePrice and nextPrice for our new priceLevel
     while ((nextPrice != nullptr) && ((isBuy && nextPrice->price > priceLevel->price) ||
                                     (!isBuy && nextPrice->price < priceLevel->price)))
     {
-        {
-            prevPrice = nextPrice; // Update prevPrice
-            nextPrice = nextPrice->nextPrice; // move to the next PriceLevel
-        }
-
-        // Insert the new PriceLevel
-        if (nextPrice != nullptr)
-        {
-            nextPrice->prevPrice = priceLevel;
-        }
-        if (prevPrice != nullptr)
-        {
-            prevPrice->nextPrice = priceLevel;
-        }
-        else
-        {
-            // If the prevPrice is nullptr, we need to update the bestBidLevel
-            bestBidLevel = priceLevel;
-        }
+        prevPrice = nextPrice;
+        nextPrice = nextPrice->nextPrice;
     }
+
     priceLevel->nextPrice = nextPrice;
     priceLevel->prevPrice = prevPrice;
+    
+    if (prevPrice == nullptr)
+    {
+        // The new priceLevel get inserted at the begining of the chain
+        bestLevel = priceLevel;
+    }
+    else
+    {
+        prevPrice->nextPrice = priceLevel;
+    }
+
+    if (nextPrice != nullptr)
+    {
+        // The new priceLevel get inserted at the ending of the chain
+        nextPrice->prevPrice = priceLevel;
+    }
+
 }
 
 void OrderBook::addLimitOrderToBook(Order *order)
@@ -326,10 +345,7 @@ void OrderBook::removeOrderNodeFromBook(OrderNode *orderNode)
 {
     // Get the price of the order
     double price = orderNode->order->getPrice();
-    PriceLevel *priceLevel = nullptr;
-
-    // Determine if it is a buy or sell order, and find the corresponding price level
-    priceLevel = priceToPriceLevel[price];
+    PriceLevel *priceLevel = priceToPriceLevel[price];
 
     // Remove the order node from the price level's linked list
     if (orderNode->prev)
@@ -403,7 +419,8 @@ void OrderBook::removePriceFromBook(PriceLevel *priceLevel)
     {
         // If it's the head of the list
         if (priceLevel->side == Side::BUY)
-        {
+        // If this is the only level in that side of the book, it will set the bestlevel to a nullptr
+        {   
             bestBidLevel = priceLevel->nextPrice;
         }
         else
@@ -545,7 +562,7 @@ void OrderBook::printPriceLevel(const PriceLevel *start, int depth) const
 
     while (currentLevel != nullptr && printedLevels < depth) {
         std::cout << "Price Level: " << currentLevel->price << "\n";
-        std::cout << "Total Quantity" << currentLevel->totalQuantity << "\n";
+        std::cout << "Total Quantity: " << currentLevel->totalQuantity << "\n";
         std::cout << "Orders at this level:\n";
 
         OrderNode* currentOrderNode = currentLevel -> headOrder;
@@ -554,7 +571,6 @@ void OrderBook::printPriceLevel(const PriceLevel *start, int depth) const
             order->displayOrderInfo(); // display info of the node
             currentOrderNode = currentOrderNode->next;
         }
-        std::cout << "---------------------------" << std::endl;
 
         // Move to the next priceLevel
         currentLevel = currentLevel -> prevPrice;

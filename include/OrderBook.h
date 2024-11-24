@@ -22,6 +22,10 @@ public:
     // Constructor
     OrderBook(const std::string &instrument);
 
+    using CrossCallback = std::function<void(Order*)>;
+
+    void setCrossCallback(CrossCallback callback);
+
     // Destructor
     ~OrderBook();
 
@@ -74,6 +78,7 @@ private:
     };
 
     std::string instrument;
+    CrossCallback crossCallback;
 
     // BBO
     PriceLevel *bestBidLevel;

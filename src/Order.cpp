@@ -80,7 +80,7 @@ OrderType Order::getType() const
     return type;
 }
 
-std::chrono::time_point<std::chrono::high_resolution_clock> Order::getTimestamp() const
+std::chrono::system_clock::time_point Order::getTimestamp() const
 {
     return timestamp;
 }
@@ -97,7 +97,6 @@ void Order::displayOrderInfo() const
     std::cout << "Direction: " << (is_buy ? "Buy" : "Sell") << "\n";
     std::cout << "Timestamp: " << timestampToString(timestamp)
               << " \n";
-    std::cout << "---------------------------" << std::endl;
 }
 
 bool Order::operator==(const Order &other) const
@@ -125,7 +124,7 @@ Order* Order::CreateMarketOrder(unsigned int id, const std::string &asset, int q
 
 Order* Order::CreateLimitOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy)
 {
-    return new Order(id, asset, price, quantity, is_buy, OrderType::MARKET);
+    return new Order(id, asset, price, quantity, is_buy, OrderType::LIMIT);
 }
 
 Order* Order::CreateStopOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy)

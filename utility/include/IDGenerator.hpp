@@ -17,6 +17,10 @@ public:
         return instance;
     }
 
+    // Prohibit copy and assignment
+    IDGenerator(const IDGenerator &) = delete;
+    IDGenerator &operator=(const IDGenerator &) = delete;
+
     unsigned int getNextOrderID()
     {
         return orderIDCounter.fetch_add(1, std::memory_order_relaxed);
@@ -36,10 +40,6 @@ public:
 private:
     // Private constructor to prevent external instantiation
     IDGenerator() : orderIDCounter(1), tradeIDCounter(1) {}
-
-    // Prohibit copy and assignment
-    IDGenerator(const IDGenerator &) = delete;
-    IDGenerator &operator=(const IDGenerator &) = delete;
 
     std::atomic<unsigned int> orderIDCounter;
     std::atomic<unsigned int> tradeIDCounter;

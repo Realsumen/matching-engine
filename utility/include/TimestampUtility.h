@@ -4,13 +4,17 @@
 #include <chrono>
 #include <string>
 
-std::string timestampToString(const std::chrono::time_point<std::chrono::high_resolution_clock> &timestamp);
-std::chrono::time_point<std::chrono::high_resolution_clock> currentTimestamp();
-double durationInMilliseconds(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
-                              const std::chrono::time_point<std::chrono::high_resolution_clock> &end);
-bool isTimestampBefore(const std::chrono::time_point<std::chrono::high_resolution_clock> &lhs,
-                       const std::chrono::time_point<std::chrono::high_resolution_clock> &rhs);
-bool isTimestampAfter(const std::chrono::time_point<std::chrono::high_resolution_clock> &lhs,
-                      const std::chrono::time_point<std::chrono::high_resolution_clock> &rhs);
+std::string timestampToString(const std::chrono::system_clock::time_point &timestamp);
+std::chrono::system_clock::time_point currentTimestamp();
+double durationInNanoseconds(const std::chrono::system_clock::time_point &start,
+                             const std::chrono::system_clock::time_point &end);
+double durationInMilliseconds(const std::chrono::system_clock::time_point &start,
+                              const std::chrono::system_clock::time_point &end);
+double durationInSeconds(const std::chrono::system_clock::time_point &start,
+                         const std::chrono::system_clock::time_point &end);
+bool isTimestampBefore(const std::chrono::system_clock::time_point &lhs,
+                       const std::chrono::system_clock::time_point &rhs);
+bool isTimestampAfter(const std::chrono::system_clock::time_point &lhs,
+                      const std::chrono::system_clock::time_point &rhs);
 
 #endif
