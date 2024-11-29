@@ -9,11 +9,11 @@ TEST(MatchingEngineTest, AddLimitOrder)
     IDGenerator::getInstance().reset();
     MatchingEngine engine;
     std::string instrument = "AAPL";
-    engine.addOrderBook(instrument);
+    engine.createNewOrderBook(instrument);
 
     // Creates a limit buy order
     unsigned int buyOrderId = IDGenerator::getInstance().getNextOrderID();
-    Order *buyOrder = new Order(buyOrderId, instrument, 150.0, 100, true, OrderType::LIMIT);
+    Order *buyOrder = Order::CreateLimitOrder(buyOrderId, instrument, 150.0, 100, true);
     std::vector<Trade> trades = engine.processNewOrder(buyOrder);
 
     EXPECT_TRUE(trades.empty());
@@ -24,11 +24,11 @@ TEST(MatchingEngineTest, AddLimitOrder)
 
     // Creats a limit sell order, which has price crossed with the best Bid
     unsigned int sellOrderId = IDGenerator::getInstance().getNextOrderID();
-    Order *sellOrder = new Order(sellOrderId, instrument, 150.0, 120, false, OrderType::LIMIT);
+    Order *sellOrder = Order::CreateLimitOrder(sellOrderId, instrument, 150.0, 120, false);
     trades = engine.processNewOrder(sellOrder);
 
     // There should be a transaction
-    ASSERT_EQ(trades.size(), buyOrderId);
+    ASSERT_EQ(trades.size(), 1);
     EXPECT_EQ(trades[0].getBuyOrderId(), buyOrderId);
     EXPECT_EQ(trades[0].getSellOrderId(), sellOrderId);
     EXPECT_EQ(trades[0].getAsset(), instrument);
@@ -45,15 +45,15 @@ TEST(MatchingEngineTest, MultiOrderProcessing)
     IDGenerator::getInstance().reset();
     MatchingEngine engine;
     std::string instrument = "AAPL";
-    engine.addOrderBook(instrument);
+    engine.createNewOrderBook(instrument);
 
     // Add Limit Order on Bid side
     unsigned int buyOrderId1 = IDGenerator::getInstance().getNextOrderID();
-    Order *buyOrder1 = new Order(buyOrderId1, instrument, 150.0, 100, true, OrderType::LIMIT);
+    Order *buyOrder1 = Order::CreateLimitOrder(buyOrderId1, instrument, 150.0, 100, true);
     engine.processNewOrder(buyOrder1);
 
     unsigned int buyOrderId2 = IDGenerator::getInstance().getNextOrderID();
-    Order *buyOrder2 = new Order(buyOrderId2, instrument, 155.0, 50, true, OrderType::LIMIT);
+    Order *buyOrder2 = Order::CreateLimitOrder(buyOrderId2, instrument, 155.0, 50, true);
     engine.processNewOrder(buyOrder2);
 
     Order *bestBid = engine.getOrderBookForRead(instrument)->getBestBid();
@@ -63,11 +63,11 @@ TEST(MatchingEngineTest, MultiOrderProcessing)
 
     // Add Limit Order on Ask side
     unsigned int sellOrderId1 = IDGenerator::getInstance().getNextOrderID();
-    Order *sellOrder1 = new Order(sellOrderId1, instrument, 152.0, 120, false, OrderType::LIMIT);
+    Order *sellOrder1 = Order::CreateLimitOrder(sellOrderId1, instrument, 152.0, 120, false);
     engine.processNewOrder(sellOrder1);
 
     unsigned int sellOrderId2 = IDGenerator::getInstance().getNextOrderID();
-    Order *sellOrder2 = new Order(sellOrderId2, instrument, 160.0, 25, false, OrderType::LIMIT);
+    Order *sellOrder2 = Order::CreateLimitOrder(sellOrderId2, instrument, 160.0, 25, false);
     engine.processNewOrder(sellOrder2);
 
     std::vector<Trade> trades = engine.getTrades();
@@ -97,10 +97,10 @@ TEST(MatchingEngineTest, ModifyOrder)
     IDGenerator::getInstance().reset();
     MatchingEngine engine;
     std::string instrument = "AAPL";
-    engine.addOrderBook(instrument);
+    engine.createNewOrderBook(instrument);
 
     unsigned int buyOrderId = IDGenerator::getInstance().getNextOrderID();
-    Order *buyOrder = new Order(buyOrderId, instrument, 150.0, 100, true, OrderType::LIMIT);
+    Order *buyOrder = Order::CreateLimitOrder(buyOrderId, instrument, 150.0, 100, true);
     engine.processNewOrder(buyOrder);
 
     double newPrice = 155.0;
@@ -118,10 +118,10 @@ TEST(MatchingEngineTest, CancelOrder)
     IDGenerator::getInstance().reset();
     MatchingEngine engine;
     std::string instrument = "AAPL";
-    engine.addOrderBook(instrument);
+    engine.createNewOrderBook(instrument);
 
     unsigned int sellOrderId = IDGenerator::getInstance().getNextOrderID();
-    Order *sellOrder = new Order(sellOrderId, instrument, 160.0, 200, false, OrderType::LIMIT);
+    Order *sellOrder = Order::CreateLimitOrder(sellOrderId, instrument, 160.0, 200, false);
     engine.processNewOrder(sellOrder);
 
     engine.cancelOrder(sellOrderId, instrument);
@@ -133,27 +133,43 @@ TEST(MatchingEngineTest, CancelOrder)
     EXPECT_EQ(bestAsk, nullptr);
 }
 
-TEST(MatchingEngineTest, ModifyOrderCausingPriceCrossed)
+TEST(MatchingEngineTest, MarketOrder)
 {
     IDGenerator::getInstance().reset();
     MatchingEngine engine;
     std::string instrument = "AAPL";
-    engine.addOrderBook(instrument);
+    engine.createNewOrderBook(instrument);
 
-    unsigned int sellOrderId = IDGenerator::getInstance().getNextOrderID();
-    Order *sellOrder = new Order(sellOrderId, instrument, 155.0, 50, false, OrderType::LIMIT);
-    engine.processNewOrder(sellOrder);
+    unsigned int limitBuyOrderId = IDGenerator::getInstance().getNextOrderID();
+    Order *limitBuyOrder = Order::CreateLimitOrder(limitBuyOrderId, instrument, 150, 100, true);
+    engine.processNewOrder(limitBuyOrder);
 
-    unsigned int buyOrderId = IDGenerator::getInstance().getNextOrderID();
-    Order *buyOrder = new Order(buyOrderId, instrument, 150.0, 100, true, OrderType::LIMIT);
-    engine.processNewOrder(buyOrder);
+    unsigned int limitSellOrderId = IDGenerator::getInstance().getNextOrderID();
+    Order *limitSellOrder = Order::CreateLimitOrder(limitSellOrderId, instrument, 155.0, 50, false);
+    engine.processNewOrder(limitSellOrder);
 
-    engine.modifyOrder(buyOrderId, instrument, 153.0, buyOrder->getQuantity());
+    unsigned int marketBuyOrderId = IDGenerator::getInstance().getNextOrderID();
+    Order *marketBuyOrder = Order::CreateMarketOrder(marketBuyOrderId, instrument, 60, true);
+    std::vector<Trade> trades = engine.processNewOrder(marketBuyOrder);
 
-    // Verify trade records and remaining orders added to the orderbook
-    std::vector<Trade> trades = engine.getTrades();
-    ASSERT_EQ(trades.size(), 0);
+    ASSERT_EQ(trades.size(), 1);
+    EXPECT_EQ(trades[0].getBuyOrderId(), marketBuyOrderId);
+    EXPECT_EQ(trades[0].getSellOrderId(), limitSellOrderId);
+    EXPECT_DOUBLE_EQ(trades[0].getPrice(), 155.0);
+    EXPECT_EQ(trades[0].getQuantity(), 50);
 
-    const OrderBook *orderBook = engine.getOrderBookForRead(instrument);
-    orderBook->printOrderBook();
+    unsigned int marketSellOrderId = IDGenerator::getInstance().getNextOrderID();
+    Order *marketSellOrder = Order::CreateMarketOrder(marketSellOrderId, instrument, 80, false);
+    trades = engine.processNewOrder(marketSellOrder);
+
+    ASSERT_EQ(trades.size(), 1);
+    EXPECT_EQ(trades[0].getBuyOrderId(), limitBuyOrderId);
+    EXPECT_EQ(trades[0].getSellOrderId(), marketSellOrderId);
+    EXPECT_DOUBLE_EQ(trades[0].getPrice(), 150.0);
+    EXPECT_EQ(trades[0].getQuantity(), 80);
+
+    Order *remainingLimitBuyOrder = engine.getOrderBookForRead(instrument)->getBestBid();
+    ASSERT_NE(remainingLimitBuyOrder, nullptr);
+    EXPECT_EQ(remainingLimitBuyOrder->getQuantity(), 20);
+
 }

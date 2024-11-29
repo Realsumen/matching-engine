@@ -40,14 +40,15 @@ void Order::setPrice(double new_price)
 
 void Order::setQuantity(int new_quantity)
 {
-    if (new_quantity > 0)
+    if (new_quantity < 0)
     {
-        quantity = new_quantity;
+        throw std::invalid_argument("Quantity must be greater than or equal to zero.");
     }
-    else
+    if (new_quantity == 0 && getType() != OrderType::MARKET)
     {
-        throw std::invalid_argument("Quantity must be greater than zero.");
+        throw std::invalid_argument("Quantity of Limit Order and Stop Order must be greater than zero.");
     }
+    quantity = new_quantity;
 }
 
 double Order::getPrice() const

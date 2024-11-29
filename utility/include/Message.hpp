@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include "OrderType.h"
+#include "TimestampUtility.h"
 
 // Messages Type
 enum class MessageType {
@@ -43,29 +44,30 @@ struct CancelOrderDetails {
     CancelOrderDetails(unsigned int id, std::string instrument) : orderId(id), instrument(instrument) {}
 };
 
-// 定义消息结构体
 struct Message {
     MessageType type;
+    std::chrono::system_clock::time_point time;
     std::unique_ptr<AddOrderDetails> addOrderDetails;
     std::unique_ptr<ModifyOrderDetails> modifyDetails;
     std::unique_ptr<CancelOrderDetails> cancelDetails;
 
     // Factory methdos to create diofferent kinds of messages
-    static Message createAddOrder(const std::string& instrument, double price, int quantity, bool isBuy, OrderType type) {
+    static Message createAddOrderMessage(const std::string& instrument, double price, int quantity, bool isBuy, OrderType type) {
         Message msg;
         msg.type = MessageType::ADD_ORDER;
         msg.addOrderDetails = std::make_unique<AddOrderDetails>(instrument, price, quantity, isBuy, type);
+        msg.time = currentTimestamp();
         return msg;
     }
 
-    static Message createModifyOrder(unsigned int orderId, std::string instrument, double newPrice, int newQuantity) {
+    static Message createModifyOrderMessage(unsigned int orderId, std::string instrument, double newPrice, int newQuantity) {
         Message msg;
         msg.type = MessageType::MODIFY_ORDER;
         msg.modifyDetails = std::make_unique<ModifyOrderDetails>(orderId, instrument, newPrice, newQuantity);
         return msg;
     }
 
-    static Message createCancelOrder(unsigned int orderId, std::string instrument) {
+    static Message createCancelOrderMessage(unsigned int orderId, std::string instrument) {
         Message msg;
         msg.type = MessageType::CANCEL_ORDER;
         msg.cancelDetails = std::make_unique<CancelOrderDetails>(orderId, instrument);

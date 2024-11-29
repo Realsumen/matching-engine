@@ -8,8 +8,6 @@
 class Order {
 public:
 
-    Order(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy, OrderType type);
-
     void setPrice(double new_price);
     void setQuantity(int new_quantity);
     
@@ -38,6 +36,8 @@ private:
     bool is_buy;       // whether it is a buy order
     OrderType type;    // order type
     std::chrono::system_clock::time_point timestamp; // timestamp
+
+    Order(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy, OrderType type);
 };
 
 #endif // ORDER_H

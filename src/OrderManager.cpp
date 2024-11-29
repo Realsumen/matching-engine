@@ -26,6 +26,7 @@ void OrderManager::stop()
     {
         messageProcessingThread.join();
     }
+    
 }
 
 void OrderManager::processLoop()
@@ -33,7 +34,7 @@ void OrderManager::processLoop()
     while (managerRunning)
     {
         Message msg;
-        if (messageQueue.pop(msg))
+        if (messageQueue.pop(msg, std::chrono::milliseconds(1000)))
         {
             switch (msg.type)
             {
@@ -57,28 +58,34 @@ void OrderManager::processLoop()
 
 void OrderManager::handleAddMessage(const Message &message)
 {
-    // Add new order according to the OrderType in of the message
     const AddOrderDetails &details = *message.addOrderDetails;
-    unsigned int newID = IDGenerator::getInstance().getNextOrderID();
-    Order *newOrder = nullptr;
-    
+    const unsigned int newID = IDGenerator::getInstance().getNextOrderID();
+    const std::string instrument = details.instrument;
+
+    if (!matchingEngine->hasInstrument(instrument))
+        throw std::invalid_argument("Unknown Instrument.");
+
+    if (matchingEngine->hasOrderId(newID))
+        throw std::invalid_argument("Repeated order ID detected.");
+
+    Order *newOrder = createOrder(details, newID);
+    matchingEngine->processNewOrder(newOrder);
+
+}
+
+Order *OrderManager::createOrder(const AddOrderDetails& details, unsigned int orderID) 
+{
     switch (details.type)
     {
         case OrderType::MARKET:
-            newOrder = Order::CreateMarketOrder(newID, details.instrument, details.quantity, details.isBuy);
-            break;
+            return Order::CreateMarketOrder(orderID, details.instrument, details.quantity, details.isBuy);
         case OrderType::LIMIT:
-            newOrder = Order::CreateLimitOrder(newID, details.instrument, details.price, details.quantity, details.isBuy);
-            break;
+            return Order::CreateLimitOrder(orderID, details.instrument, details.price, details.quantity, details.isBuy);
         case OrderType::STOP:
-            newOrder = Order::CreateStopOrder(newID, details.instrument, details.price, details.quantity, details.isBuy);
-            break;
+            return Order::CreateStopOrder(orderID, details.instrument, details.price, details.quantity, details.isBuy);
         default:
-            break;
+            throw std::invalid_argument("Unknown OrderType.");
     }
-
-    matchingEngine->processNewOrder(newOrder);
-
 }
 
 void OrderManager::handleModifyMessage(const Message &message)

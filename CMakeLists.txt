@@ -21,11 +21,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Find required packages
 find_package(spdlog REQUIRED)
 find_package(GTest REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(UV REQUIRED libuv IMPORTED_TARGET)
 
 # Add utility files
 file(GLOB UTILITY_SOURCES "utility/src/*.cpp" "utility/include/*.hpp")
 add_library(utility_lib ${UTILITY_SOURCES})
 target_include_directories(utility_lib PUBLIC utility/include)
+target_link_libraries(utility_lib PUBLIC PkgConfig::UV)
 
 # Add source files excluding main.cpp
 file(GLOB MAIN_SOURCES "src/*.cpp")

@@ -18,10 +18,10 @@ void MessageQueue::push(Message&& msg) {
     m_condVar.notify_one(); // Notify a readied consumer
 }
 
-bool MessageQueue::pop(Message& msg) {
+bool MessageQueue::pop(Message& msg, std::chrono::milliseconds timeout) {
     // The incoming parameter msg is used to store the information popped out of the queue
     std::unique_lock<std::mutex> lock(m_mutex);
-    m_condVar.wait(lock, [this]() { return !m_queue.empty(); }); // Block and wait until the queue is not empty
+    m_condVar.wait_for(lock, timeout, [this]() { return !m_queue.empty(); }); // Block and wait until the queue is not empty
 
     if (!m_queue.empty()) {
         msg = std::move(m_queue.front());

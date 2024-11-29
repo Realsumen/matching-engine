@@ -29,8 +29,8 @@ public:
     TradeStatus getSellOrderStatus() const;
     std::chrono::system_clock::time_point getTimestamp() const;
 
-    void setBuyOrderStatus(TradeStatus status); // 设置买单状态
-    void setSellOrderStatus(TradeStatus status); // 设置卖单状态
+    void setBuyOrderStatus(TradeStatus status);
+    void setSellOrderStatus(TradeStatus status);
     std::string toString() const;
 
 private:

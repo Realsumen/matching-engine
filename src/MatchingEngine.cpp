@@ -21,7 +21,7 @@ MatchingEngine::MatchingEngine()
     trades = std::vector<Trade>();
 }
 
-void MatchingEngine::addOrderBook(const std::string &instrument)
+void MatchingEngine::createNewOrderBook(const std::string &instrument)
 {
     OrderBook *newOrderBook = new OrderBook(instrument);
     newOrderBook->setCrossCallback(
@@ -47,10 +47,11 @@ void MatchingEngine::removeOrderBook(const std::string &instrument)
 
 std::vector<Trade> MatchingEngine::processNewOrder(Order *order)
 {
-    // All the trades happened
     std::vector<Trade> trades;
 
     OrderType type = order->getType();
+
+    globalOrderIds.insert(order->getId());
 
     // Matching processing logic according to order type
     if (type == OrderType::LIMIT)
@@ -136,54 +137,48 @@ const OrderBook *MatchingEngine::getOrderBookForRead(const std::string &instrume
 bool MatchingEngine::hasOrder(std::string instrument, unsigned int orderId)
 {   
     OrderBook *book = orderBooks[instrument];
-    auto it = book->orderIdToOrderNode.find(orderId);
-    if (it == book->orderIdToOrderNode.end())
+    return (book->orderIdToOrderNode.find(orderId) != book->orderIdToOrderNode.end());
+}
+
+bool MatchingEngine::hasInstrument(std::string instrument)
+{
+    auto it = orderBooks.find(instrument);
+    if (it == orderBooks.end())
     {
         return false;
     }
-    else
     {
         return true;
     }
+}
+
+bool MatchingEngine::hasOrderId(unsigned int orderId)
+{
+    return (globalOrderIds.find(orderId) != globalOrderIds.end());
 }
 
 std::vector<Trade> MatchingEngine::processLimitOrder(Order *order)
 {   
     // If limit order does not enter the matching process, this vector is empty
     std::vector<Trade> trades;
-
     OrderBook *orderbook = getOrderBook(order->getAsset());
 
-    if (order->isBuy())
-    {   
-        if ((orderbook->bestAskLevel != nullptr) && (order->getPrice() >= orderbook->bestAskLevel->price))
-        {
-            int quantity = order->getQuantity();
-            trades = matchOrder(order);
-            int remainQuantity = order->getQuantity();
-            order->setQuantity(remainQuantity);
+    const bool isBuy = order->isBuy();
+    OrderBook::PriceLevel *bestLevel = isBuy ? orderbook->bestAskLevel : orderbook->bestBidLevel;
+    bool shouldMatch = false;
+    if (bestLevel != nullptr) {
+        shouldMatch = isBuy ? (order->getPrice() >= bestLevel->price)
+                              : (order->getPrice() <= bestLevel->price);
+    }
 
-            std::cout << "There are " << quantity - remainQuantity << " units traded. Remaining " 
-          << remainQuantity << " units enter into the order book." << std::endl;
-        }
-        if (order->getQuantity() > 0)
-        {
-            orderbook->addLimitOrderToBook(order);
-        }
+    if (shouldMatch)
+    {
+        trades = matchOrder(order);
+    }
 
-    } else{
-        if ((orderbook->bestBidLevel != nullptr) && (order->getPrice() <= orderbook->bestBidLevel->price))
-        {
-            int quantity = order->getQuantity();
-            trades = matchOrder(order);
-            int remainQuantity = order->getQuantity();
-            std::cout << "There are " << quantity - remainQuantity << " units traded. Remaining " 
-          << remainQuantity << " units enter into the order book." << std::endl;
-        }
-        if (order->getQuantity() > 0)
-        {
-            orderbook->addLimitOrderToBook(order);
-        }
+    if (order->getQuantity() > 0)
+    {
+        orderbook->addLimitOrderToBook(order);
     }
 
     return trades;
@@ -191,11 +186,15 @@ std::vector<Trade> MatchingEngine::processLimitOrder(Order *order)
 
 std::vector<Trade> MatchingEngine::processMarketOrder(Order *order)
 {
+    int originalQuantity = order->getQuantity();
     std::vector<Trade> trades = matchOrder(order);
+    int newQuantity = order->getQuantity();
 
     if (order->getQuantity() > 0)
     {
-        std::cerr << "Market Order " << order->getId() << " partially filled. remaining Quantity: " << order->getQuantity() << "\n";
+        std::cerr << "Market Order " << order->getId() << " partially filled." 
+        << originalQuantity - newQuantity << "filled." << "remaining Quantity: " 
+        << newQuantity << "\n";
     }
 
     delete order;
@@ -224,19 +223,14 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
 {   
 
     std::vector<Trade> trades;
-    // Find the asset of the order
-    std::string instrument = order->getAsset();
-    // Get the orderbook for the order
+
+    const std::string instrument = order->getAsset();
     OrderBook *orderbook = getOrderBook(instrument);
     int remainingQuantity = order->getQuantity();
-    OrderBook::PriceLevel *bestLevel = nullptr;
     bool is_buy = order->isBuy();
-    // Order Id variable
-    unsigned int buyOrderId = 0;
-    unsigned int sellOrderId = 0;
 
-    // Determine the bestLevel corresponding to the order's opposite direction.
-    bestLevel = is_buy ? orderbook->bestAskLevel:orderbook->bestBidLevel;
+    // Determine the best opposite quote
+    OrderBook::PriceLevel *bestLevel = is_buy ? orderbook->bestAskLevel:orderbook->bestBidLevel;
 
     while (remainingQuantity > 0 && bestLevel != nullptr)
     {   
@@ -247,10 +241,9 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
         if (order->getType() == OrderType::LIMIT)
         {
             // For a limit order that enters the matching process, check the price condition
-            if (is_buy && order->getPrice() < tradedPrice) {
-                break;
-            }
-            if (!is_buy && order->getPrice() > tradedPrice) {
+            if ((is_buy && order->getPrice() < tradedPrice) ||
+                (!is_buy && order->getPrice() > tradedPrice))
+            {
                 break;
             }
         }
@@ -263,20 +256,9 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
             int tradedQuantity = std::min(oppositeQuantity, remainingQuantity);
             unsigned int newTradeId = IDGenerator::getInstance().getNextTradeID();
 
-            if (is_buy)
-            {
-                buyOrderId = order->getId();
-                sellOrderId = oppositeOrder->getId();
-            }
-            else
-            {
-                sellOrderId = order->getId();
-                buyOrderId = oppositeOrder->getId();
-            }
-
             Trade trade(newTradeId, 
-                buyOrderId, 
-                sellOrderId, 
+                is_buy ? order->getId() : oppositeOrder->getId(),
+                is_buy ? oppositeOrder->getId() : order->getId(),
                 instrument, 
                 tradedPrice, 
                 tradedQuantity);
@@ -290,14 +272,14 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
                 // If the opposite orderNode's quantity is 0, we need to remove the node and delete the order 
                 // When we remove the order, it will perform level quantity update and level delete automatcially
                 orderbook -> orderIdToOrderNode.erase(oppositeOrder->getId());
-                OrderBook::OrderNode *newNode = oppositeOrderNode->next;
+                OrderBook::OrderNode *nextNode = oppositeOrderNode->next;
                 orderbook -> removeOrderNodeFromBook(oppositeOrderNode);
                 delete oppositeOrder;
-                oppositeOrderNode = newNode;
+                oppositeOrderNode = nextNode;
 
                 if (oppositeOrderNode == nullptr)
                 {
-                    bestLevel = is_buy ? orderbook->bestAskLevel:orderbook->bestBidLevel;
+                    bestLevel = is_buy ? orderbook->bestAskLevel : orderbook->bestBidLevel;
                 }
             }
             else
@@ -309,10 +291,11 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
         }
     }
 
-    for (size_t i = 0; i < trades.size(); ++i)
+    size_t tradeCount = trades.size();
+    for (size_t i = 0; i < tradeCount; ++i)
     {
         Trade &trade = trades[i];
-        bool isLastTrade = (i == trades.size() - 1);
+        bool isLastTrade = (i == tradeCount - 1);
 
         if (!isLastTrade)
         {
@@ -342,8 +325,8 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
         }
     }
 
-    // Update the quantity for the order
     order->setQuantity(remainingQuantity);
+
     // Update the Latest price for the instrument
     if (!trades.empty()) {
         instrumentToTradedPrice[instrument] = trades.back().getPrice();

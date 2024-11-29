@@ -12,14 +12,14 @@
 
 class OrderManager
 {
-    // Constructor
+public:
     OrderManager(MatchingEngine* engine, MessageQueue& messageQueue);
 
-    // Begin processing messages from the messageQueue
     void start();
 
-    // Stop Processing Orders from the messageQueue
     void stop();
+
+    void handleAddMessage(const Message& message);
 
 private:
     MatchingEngine* matchingEngine; // Matching Engine pointer
@@ -31,11 +31,11 @@ private:
     // Messages processing loop
     void processLoop();
 
-    void handleAddMessage(const Message& message);
-
     void handleModifyMessage(const Message& message);
 
     void handleCancelMessage(const Message& message);
+
+    Order* createOrder(const AddOrderDetails& details, unsigned int orderID) ;
 
 };
 

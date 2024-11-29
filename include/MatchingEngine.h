@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "Order.h"
 #include "Trade.h"
@@ -19,7 +20,7 @@ public:
     MatchingEngine& operator=(const MatchingEngine&) = delete;
 
     // Add a new Instrument or Remove an existing Instrument
-    void addOrderBook(const std::string &instrument);
+    void createNewOrderBook(const std::string &instrument);
     void removeOrderBook(const std::string &instrument);
 
     std::vector<Trade> processNewOrder(Order *order);
@@ -36,15 +37,18 @@ public:
 
     bool hasOrder(std::string instrument, unsigned int orderId);
 
+    bool hasInstrument(std::string instrument);
+
+    bool hasOrderId(unsigned int orderId);
+
 private:
 
-    // Mapping from trading instrument to order book
+    std::unordered_set<unsigned int> globalOrderIds;
+
     std::unordered_map<std::string, OrderBook *> orderBooks;
 
-    // Mapping from instrument to the last traded price for the instrument
     std::unordered_map<std::string, double> instrumentToTradedPrice;
     
-    // All trade records
     std::vector<Trade> trades;
 
     // assistant functions
