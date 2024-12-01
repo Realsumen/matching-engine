@@ -1,6 +1,9 @@
 # Build and Output directories
 /build/
-GPT*
 
 # IDE specific files
 .vscode/
+
+# Development files
+/deprecated/
+/docs/fast_instructions.txt

@@ -11,13 +11,10 @@
 
 MatchingEngine::MatchingEngine()
 {
-    // Initialize Orderbook
     orderBooks = std::unordered_map<std::string, OrderBook *>();
 
-    // Initialize the instrumentToTradedPrice
     instrumentToTradedPrice = std::unordered_map<std::string, double>();
 
-    // Initialize the container for all the trade records
     trades = std::vector<Trade>();
 }
 
@@ -204,6 +201,7 @@ std::vector<Trade> MatchingEngine::processMarketOrder(Order *order)
 
 std::vector<Trade> MatchingEngine::processStopOrder(Order *order)
 {
+    // TODO: Stop Order logic
     bool isBuy = order->isBuy();
     double price = order->getPrice();
 
@@ -221,7 +219,7 @@ std::vector<Trade> MatchingEngine::processStopOrder(Order *order)
 
 std::vector<Trade> MatchingEngine::matchOrder(Order *order)
 {   
-
+    // TODO: Trigger logic for Stop Order
     std::vector<Trade> trades;
 
     const std::string instrument = order->getAsset();

@@ -2,12 +2,9 @@
 #include <atomic>
 #include <iostream>
 
-#include "Order.h"
-#include "OrderBook.h"
 #include "MatchingEngine.h"
 #include "OrderManager.h"
 #include "MessageQueue.h"
-#include "Message.hpp"
 #include "IDGenerator.hpp"
 
 OrderManager::OrderManager(MatchingEngine* engine, MessageQueue& queue)

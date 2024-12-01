@@ -101,6 +101,7 @@ void OrderBook::cancelLimitOrder(unsigned int orderId)
 
 void OrderBook::cancelStopOrder(unsigned int orderId)
 {
+    // TODO: Cancel StopOrder logic
 }
 
 void OrderBook::modifyLimitOrder(unsigned int orderId, double newPrice, int newQuantity)
@@ -150,6 +151,7 @@ void OrderBook::modifyLimitOrder(unsigned int orderId, double newPrice, int newQ
 
 void OrderBook::modifyStopOrder(unsigned int orderId, double newPrice, int newQuantity)
 {
+    // TODO: Modify StopOrder Logic
 }
 
 Order *OrderBook::getBestBid() const
@@ -339,6 +341,7 @@ void OrderBook::addLimitOrderToBook(Order *order)
 
 void OrderBook::addStopOrderToBook(Order *order)
 {
+    // Add a new StopOrder Logic 
 }
 
 void OrderBook::removeOrderNodeFromBook(OrderNode *orderNode)

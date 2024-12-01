@@ -21,8 +21,8 @@ struct AddOrderDetails {
     bool isBuy;
     OrderType type;
 
-    AddOrderDetails(const std::string& instr, double p, int qty, bool buy, OrderType ordType)
-        : instrument(instr), price(p), quantity(qty), isBuy(buy), type(ordType) {}
+    AddOrderDetails(const std::string& instr, double p, int qty, bool buy, OrderType orderType)
+        : instrument(instr), price(p), quantity(qty), isBuy(buy), type(orderType) {}
 };
 
 // Details for ModifyOrder
