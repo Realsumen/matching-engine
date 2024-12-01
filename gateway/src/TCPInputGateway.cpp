@@ -12,9 +12,9 @@ TCPInputGateway::~TCPInputGateway()
 
 void TCPInputGateway::start(const std::string &ip, int port)
 {
-    uv_tcp_t* server = new uv_tcp_t;
-    uv_tcp_init(loop_, server);
-    server->data = this;
+    server_ = new uv_tcp_t;
+    uv_tcp_init(loop_, server_);
+    server_->data = this;
 
     sockaddr_in addr;
     int addr_ret = uv_ip4_addr(ip.c_str(), port, &addr);
@@ -34,7 +34,7 @@ void TCPInputGateway::start(const std::string &ip, int port)
     }
 
     // Start lisening
-    int listen_ret = uv_listen((uv_stream_t*)server, 128, [](uv_stream_t* client, int status) 
+    int listen_ret = uv_listen((uv_stream_t*)server_, 128, [](uv_stream_t* client, int status) 
     {
         if (status < 0) {
             std::cerr << "Listen error: " << uv_strerror(status) << std::endl;
@@ -91,7 +91,7 @@ void TCPInputGateway::stop()
 }
 
 void TCPInputGateway::receive(const std::string& data)
-{
+{   
     Message message = ProtocolParser::parse(data, "TCP");
     messageQueue_.push(std::move(message));
 }
