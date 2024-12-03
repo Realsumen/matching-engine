@@ -7,7 +7,7 @@
 .vscode/
 .idea/
 .clang-tidy
-.DS_store
+.DS_Store
 
 # Development files
 /deprecated/
