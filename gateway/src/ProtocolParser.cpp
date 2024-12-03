@@ -2,12 +2,10 @@
 #include <stdexcept>
 #include <iostream>
 #include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
 
 using namespace rapidjson;
 
-Message ProtocolParser::parse(const std::string& rawData, const std::string& protocol)
+auto ProtocolParser::parse(const std::string& rawData, const std::string& protocol) -> Message
 {
     if (protocol == "TCP")
     {
@@ -17,17 +15,17 @@ Message ProtocolParser::parse(const std::string& rawData, const std::string& pro
     throw std::invalid_argument("Unsupported protocol" + protocol);
 }
 
-std::string ProtocolParser::serialize(const Message& trades, const std::string& protocol) 
+auto ProtocolParser::serialize(const Message& trades, const std::string& protocol) -> std::string 
 {   
     if (protocol == "TCP")
     {   
-        // TODO design serialization: what messages does the front ends need to recieve?
+        // TODO: design serialization: what messages does the front ends need to receive?
     }
 
     throw std::invalid_argument("Unsupported protocol: " + protocol);
 }
 
-Message ProtocolParser::parseTCP(const std::string& rawData)
+auto ProtocolParser::parseTCP(const std::string& rawData) -> Message
 {
     Document document;
     if (document.Parse(rawData.c_str()).HasParseError()) {
@@ -110,8 +108,8 @@ Message ProtocolParser::parseTCP(const std::string& rawData)
     }
 }
 
-std::string ProtocolParser::serializeTCPTrades(const std::vector<Trade> &trades)
+auto ProtocolParser::serializeTCPTrades(const std::vector<Trade> &trades) -> std::string
 {
     // TODO serialize trades and send to the front end
-    return std::string();
+    return {};
 }

@@ -1,23 +1,19 @@
-#include <vector>
+#include <utility>
 #include <iostream>
-#include <algorithm>
 #include <limits>
 #include "OrderBook.h"
 #include "Order.h"
-#include "Trade.h"
 
 double POS_INF = std::numeric_limits<double>::infinity();
 double NEG_INF = -std::numeric_limits<double>::infinity();
 
 
-OrderBook::OrderBook(const std::string &instrument) : instrument(instrument), bestBidLevel(nullptr), bestAskLevel(nullptr)
+OrderBook::OrderBook(std::string instrument) : instrument(std::move(instrument)), bestBidLevel(nullptr), bestAskLevel(nullptr)
 {
-    // Initializes the price level mappings and order mappings (default is empty)
-    
-    // Initializes empty orderNode stack and priceLevel Stack
-    constexpr int preallocateOrderNodeSize = 10000;
-    constexpr int preallocatePriceLevelSize = 1000;
-    try {     
+
+    try {
+        constexpr int preallocatePriceLevelSize = 1000;
+        constexpr int preallocateOrderNodeSize = 10000;
         for (size_t i = 0; i < preallocateOrderNodeSize; i++)
         {
             emptyOrderNodeStack.push(new OrderNode());
@@ -28,7 +24,6 @@ OrderBook::OrderBook(const std::string &instrument) : instrument(instrument), be
         }
     } catch(const std::bad_alloc& e) {
         std::cerr << "Memory allocation failed: " << e.what() << '\n';
-        // Clear all the memory allocated
         while (!emptyOrderNodeStack.empty()) {
             delete emptyOrderNodeStack.top();
             emptyOrderNodeStack.pop();
@@ -44,12 +39,12 @@ OrderBook::OrderBook(const std::string &instrument) : instrument(instrument), be
 }
 
 void OrderBook::setCrossCallback(CrossCallback callback) {
-    crossCallback = callback;
+    crossCallback = std::move(callback);
 }
 
 OrderBook::~OrderBook()
 {
-    // release all the OrderNode and PriceLevel in the buyside
+    // release all the OrderNode and PriceLevel in the buySide
     for (auto &pair : priceToPriceLevel)
     {
         PriceLevel *level = pair.second;
@@ -254,7 +249,7 @@ void OrderBook::printOrderBook(int depth) const
     std::cout << "----------------------------\n";
 }
 
-void OrderBook::addPriceLevel(PriceLevel *priceLevel, PriceLevel *&bestLevel)
+void OrderBook::addPriceLevel(PriceLevel *priceLevel, PriceLevel *&bestLevel) // NOLINT(*-convert-member-functions-to-static)
 {
     PriceLevel *prevPrice = nullptr;
     PriceLevel *nextPrice = bestLevel;
@@ -274,7 +269,7 @@ void OrderBook::addPriceLevel(PriceLevel *priceLevel, PriceLevel *&bestLevel)
     
     if (prevPrice == nullptr)
     {
-        // The new priceLevel get inserted at the begining of the chain
+        // The new priceLevel get inserted at the beginning of the chain
         bestLevel = priceLevel;
     }
     else
@@ -397,7 +392,7 @@ void OrderBook::removePriceFromBook(PriceLevel *priceLevel)
 {
     if (priceLevel == nullptr)
     {
-        std::cerr << "Atttempted to remove a null PriceLevel.\n";
+        std::cerr << "Attempted to remove a null PriceLevel.\n";
         return;
     }
 
@@ -413,7 +408,7 @@ void OrderBook::removePriceFromBook(PriceLevel *priceLevel)
         priceToPriceLevel.erase(it);
     }
 
-    // Remove from the doubouly linked list
+    // Remove from the doubly linked list
     if (priceLevel->prevPrice)
     {
         priceLevel->prevPrice->nextPrice = priceLevel->nextPrice;
@@ -422,7 +417,7 @@ void OrderBook::removePriceFromBook(PriceLevel *priceLevel)
     {
         // If it's the head of the list
         if (priceLevel->side == Side::BUY)
-        // If this is the only level in that side of the book, it will set the bestlevel to a nullptr
+        // If this is the only level in that side of the book, it will set the bestLevel to a nullptr
         {   
             bestBidLevel = priceLevel->nextPrice;
         }
@@ -480,7 +475,7 @@ OrderBook::OrderNode *OrderBook::getOrderNode()
 {   
     if (emptyOrderNodeStack.empty()) 
     {
-        for (size_t i; i < 2000; i++)
+        for (size_t i = 0; i < 2000; i++)
         {
             emptyOrderNodeStack.push(new OrderNode());
         }
@@ -504,7 +499,7 @@ OrderBook::PriceLevel *OrderBook::getPriceLevel()
 {
     if (emptyPriceLevelStack.empty()) 
     {
-        for (size_t i; i < 200; i++)
+        for (size_t i = 0; i < 200; i++)
         {
             emptyPriceLevelStack.push(new PriceLevel());
         }
@@ -557,7 +552,7 @@ void OrderBook::cleanup()
 
 }
 
-void OrderBook::printPriceLevel(const PriceLevel *start, int depth) const
+void OrderBook::printPriceLevel(const PriceLevel *start, int depth) const// NOLINT(*-convert-member-functions-to-static)
 {   
     // This function is used to print depth levels from the start.
     const PriceLevel* currentLevel = start; // Start with the incoming price layer

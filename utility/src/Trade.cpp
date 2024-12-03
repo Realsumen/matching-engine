@@ -3,53 +3,54 @@
 #include <sstream>
 #include <iomanip>
 #include "Trade.h"
+#include "utility_config.hpp"
 #include "TimestampUtility.h"
 
-Trade::Trade(int trade_id, int buy_order_id, int sell_order_id, const std::string asset, double price, int quantity) : trade_id(trade_id), buy_order_id(buy_order_id), sell_order_id(sell_order_id),
-                                                                                                                       asset(asset), price(price), quantity(quantity), timestamp(currentTimestamp()),
+Trade::Trade(const unsigned int trade_id, const unsigned int buy_order_id, const unsigned int sell_order_id, std::string  asset, const double price, const int quantity) : trade_id(trade_id), buy_order_id(buy_order_id), sell_order_id(sell_order_id),
+                                                                                                                       asset(std::move(asset)), price(price), quantity(quantity), timestamp(currentTimestamp()),
                                                                                                                        buyOrderStatus(TradeStatus::UNDEFINED), sellOrderStatus(TradeStatus::UNDEFINED) {}
 
-const std::string &Trade::getAsset() const
+auto Trade::getAsset() const -> const std::string &
 {
     return asset;
 }
 
-unsigned int Trade::getTradeId() const
+auto Trade::getTradeId() const -> unsigned int
 {
     return trade_id;
 }
 
-unsigned int Trade::getBuyOrderId() const
+auto Trade::getBuyOrderId() const -> unsigned int
 {
     return buy_order_id;
 }
 
-unsigned int Trade::getSellOrderId() const
+auto Trade::getSellOrderId() const -> unsigned int
 {
     return sell_order_id;
 }
 
-double Trade::getPrice() const
+auto Trade::getPrice() const -> double
 {
     return price;
 }
 
-double Trade::getTradeValue() const
+auto Trade::getTradeValue() const -> double
 {
     return price * quantity;
 }
 
-int Trade::getQuantity() const
+auto Trade::getQuantity() const -> int
 {
     return quantity;
 }
 
-TradeStatus Trade::getBuyOrderStatus() const
+auto Trade::getBuyOrderStatus() const -> TradeStatus
 {
     return buyOrderStatus;
 }
 
-TradeStatus Trade::getSellOrderStatus() const
+auto Trade::getSellOrderStatus() const -> TradeStatus
 {
     return sellOrderStatus;
 }
@@ -64,27 +65,62 @@ void Trade::setSellOrderStatus(TradeStatus status)
     this->sellOrderStatus = status;
 }
 
-std::chrono::system_clock::time_point Trade::getTimestamp() const
+auto Trade::getTimestamp() const -> std::chrono::system_clock::time_point
 {
     return timestamp;
 }
 
-std::string Trade::toString() const
-{
+auto Trade::toString(const std::string& format) const -> std::string {
     std::ostringstream oss;
 
-    // Left aligned
-    oss << std::left;
-    oss << std::setw(20) << "Trade ID:" << trade_id << '\n'
-        << std::setw(20) << "Buy Order ID:" << buy_order_id << '\n'
-        << std::setw(20) << "Sell Order ID:" << sell_order_id << '\n'
-        << std::setw(20) << "Asset:" << asset << '\n'
-        << std::setw(20) << "Price:" << std::fixed << std::setprecision(2) << price << '\n'
-        << std::setw(20) << "Quantity:" << quantity << '\n'
-        << std::setw(20) << "Trade Value:" << std::fixed << std::setprecision(2) << getTradeValue() << '\n'
-        << std::setw(20) << "Buy Order Status:" << static_cast<int>(buyOrderStatus) << '\n'
-        << std::setw(20) << "Sell Order Status:" << static_cast<int>(sellOrderStatus) << '\n'
-        << std::setw(20) << "Timestamp:" << timestampToString(timestamp);
+    if (format == "default") {
+        auto appendField = [&oss](const std::string& label, const auto& value, bool format = false) {
+            oss << std::setw(Utility_Config::Trade::DEFAULT_ALIGNMENT_DISPLAY) << label;
+            if (format) 
+            {
+                oss << std::fixed << std::setprecision(Utility_Config::Trade::DEFAULT_PRECISION_DISPLAY) << value;
+            } else {
+                oss << value;
+            }
+        };
+
+        appendField("Trade ID: ", trade_id);
+        appendField("Buy Order ID: ", buy_order_id);
+        appendField("Sell Order ID: ", sell_order_id);
+        appendField("Asset: ", asset);
+        appendField("Price: ", price, true);
+        appendField("Quantity: ", quantity);
+        appendField("Trade Value: ", getTradeValue(), true);
+        appendField("Buy Order Status: ", static_cast<int>(buyOrderStatus));
+        appendField("Sell Order Status: ", static_cast<int>(sellOrderStatus));
+        appendField("Timestamp: ", timestampToString(timestamp));
+    } else if (format == "json") {
+        oss << "{"
+            << "\"TradeID\":" << trade_id << ","
+            << "\"BuyOrderID\":" << buy_order_id << ","
+            << "\"SellOrderID\":" << sell_order_id << ","
+            << R"("Asset":")" << asset << "\","
+            << "\"Price\":" << std::fixed << std::setprecision(Utility_Config::Trade::DEFAULT_PRECISION_DISPLAY) << price << ","
+            << "\"Quantity\":" << quantity << ","
+            << "\"TradeValue\":" << std::fixed << std::setprecision(Utility_Config::Trade::DEFAULT_PRECISION_DISPLAY) << getTradeValue() << ","
+            << "\"BuyOrderStatus\":" << static_cast<int>(buyOrderStatus) << ","
+            << "\"SellOrderStatus\":" << static_cast<int>(sellOrderStatus) << ","
+            << R"("Timestamp":")" << timestampToString(timestamp) << "\""
+            << "}";
+    } else if (format == "csv") {
+        oss << trade_id << ","
+            << buy_order_id << ","
+            << sell_order_id << ","
+            << asset << ","
+            << std::fixed << std::setprecision(Utility_Config::Trade::DEFAULT_PRECISION_DISPLAY) << price << ","
+            << quantity << ","
+            << std::fixed << std::setprecision(Utility_Config::Trade::DEFAULT_PRECISION_DISPLAY) << getTradeValue() << ","
+            << static_cast<int>(buyOrderStatus) << ","
+            << static_cast<int>(sellOrderStatus) << ","
+            << timestampToString(timestamp);
+    } else {
+        throw std::invalid_argument("Unsupported format: " + format);
+    }
 
     return oss.str();
 }

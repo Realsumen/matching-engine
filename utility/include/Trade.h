@@ -2,7 +2,6 @@
 #define TRADE_H
 
 #include <string>
-#include <chrono>
 
 enum class TradeStatus
 {
@@ -15,23 +14,23 @@ enum class TradeStatus
 class Trade
 {
 public:
-    Trade(int trade_id, int buy_order_id, int sell_order_id, 
-        const std::string asset, double price, int quantity);
+    Trade(unsigned int trade_id, unsigned int buy_order_id, unsigned int sell_order_id,
+         std::string  asset, double price, int quantity);
 
-    const std::string &getAsset() const;
-    unsigned int getTradeId() const;
-    unsigned int getBuyOrderId() const;
-    unsigned int getSellOrderId() const;
-    double getPrice() const;
-    double getTradeValue() const;
-    int getQuantity() const;
-    TradeStatus getBuyOrderStatus() const;
-    TradeStatus getSellOrderStatus() const;
-    std::chrono::system_clock::time_point getTimestamp() const;
+    [[nodiscard]] auto getAsset() const -> const std::string &;
+    [[nodiscard]] auto getTradeId() const -> unsigned int;
+    [[nodiscard]] auto getBuyOrderId() const -> unsigned int;
+    [[nodiscard]] auto getSellOrderId() const -> unsigned int;
+    [[nodiscard]] auto getPrice() const -> double;
+    [[nodiscard]] auto getTradeValue() const -> double;
+    [[nodiscard]] auto getQuantity() const -> int;
+    [[nodiscard]] auto getBuyOrderStatus() const -> TradeStatus;
+    [[nodiscard]] auto getSellOrderStatus() const -> TradeStatus;
+    [[nodiscard]] auto getTimestamp() const -> std::chrono::system_clock::time_point;
 
     void setBuyOrderStatus(TradeStatus status);
     void setSellOrderStatus(TradeStatus status);
-    std::string toString() const;
+    [[nodiscard]] auto toString(const std::string& format = "default") const -> std::string;
 
 private:
     unsigned int trade_id;

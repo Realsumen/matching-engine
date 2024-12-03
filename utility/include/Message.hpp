@@ -1,7 +1,6 @@
 #ifndef MESSAGE_HPP
 #define MESSAGE_HPP
 
-#include <memory>
 #include <string>
 #include "OrderType.h"
 #include "TimestampUtility.h"
@@ -10,7 +9,8 @@
 enum class MessageType {
     ADD_ORDER,
     MODIFY_ORDER,
-    CANCEL_ORDER
+    CANCEL_ORDER,
+    UNDEFINED
 };
 
 // Details for AddOrder
@@ -21,8 +21,8 @@ struct AddOrderDetails {
     bool isBuy;
     OrderType type;
 
-    AddOrderDetails(const std::string& instr, double p, int qty, bool buy, OrderType orderType)
-        : instrument(instr), price(p), quantity(qty), isBuy(buy), type(orderType) {}
+    AddOrderDetails(std::string  instr, const double p, const int qty, const bool buy, const OrderType orderType)
+        : instrument(std::move(instr)), price(p), quantity(qty), isBuy(buy), type(orderType) {}
 };
 
 // Details for ModifyOrder
@@ -32,8 +32,8 @@ struct ModifyOrderDetails {
     double newPrice;
     int newQuantity;
 
-    ModifyOrderDetails(unsigned int id, std::string instrument, double price, int qty)
-        : orderId(id), instrument(instrument), newPrice(price), newQuantity(qty) {}
+    ModifyOrderDetails(const unsigned int id, std::string instrument, const double price, const int qty)
+        : orderId(id), instrument(std::move(instrument)), newPrice(price), newQuantity(qty) {}
 };
 
 // Details for Cancel Order
@@ -41,18 +41,18 @@ struct CancelOrderDetails {
     unsigned int orderId;
     std::string instrument;
 
-    CancelOrderDetails(unsigned int id, std::string instrument) : orderId(id), instrument(instrument) {}
+    CancelOrderDetails(const unsigned int id, std::string instrument) : orderId(id), instrument(std::move(instrument)) {}
 };
 
 struct Message {
-    MessageType type;
+    MessageType type = MessageType::UNDEFINED;
     std::chrono::system_clock::time_point time;
     std::unique_ptr<AddOrderDetails> addOrderDetails;
     std::unique_ptr<ModifyOrderDetails> modifyDetails;
     std::unique_ptr<CancelOrderDetails> cancelDetails;
 
-    // Factory methdos to create diofferent kinds of messages
-    static Message createAddOrderMessage(const std::string& instrument, double price, int quantity, bool isBuy, OrderType type) {
+    // Factory methods to create different kinds of messages
+    static auto createAddOrderMessage(const std::string& instrument, double price, int quantity, bool isBuy, OrderType type) -> Message {
         Message msg;
         msg.type = MessageType::ADD_ORDER;
         msg.addOrderDetails = std::make_unique<AddOrderDetails>(instrument, price, quantity, isBuy, type);
@@ -60,14 +60,14 @@ struct Message {
         return msg;
     }
 
-    static Message createModifyOrderMessage(unsigned int orderId, std::string instrument, double newPrice, int newQuantity) {
+    static auto createModifyOrderMessage(unsigned int orderId, const std::string& instrument, double newPrice, int newQuantity) -> Message {
         Message msg;
         msg.type = MessageType::MODIFY_ORDER;
         msg.modifyDetails = std::make_unique<ModifyOrderDetails>(orderId, instrument, newPrice, newQuantity);
         return msg;
     }
 
-    static Message createCancelOrderMessage(unsigned int orderId, std::string instrument) {
+    static auto createCancelOrderMessage(unsigned int orderId, const std::string& instrument) -> Message {
         Message msg;
         msg.type = MessageType::CANCEL_ORDER;
         msg.cancelDetails = std::make_unique<CancelOrderDetails>(orderId, instrument);

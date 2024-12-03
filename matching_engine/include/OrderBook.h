@@ -1,13 +1,11 @@
-#ifndef ORDERBOOK_H
-#define ORDERBOOK_H
+#ifndef ORDER_BOOK_H
+#define ORDER_BOOK_H
 
 #include <string>
 #include <unordered_map>
 #include <map>
 #include <stack>
-#include <vector>
 #include "Order.h"
-#include "Trade.h"
 
 enum class Side
 {
@@ -20,7 +18,7 @@ class OrderBook
 {
 public:
     // Constructor
-    OrderBook(const std::string &instrument);
+    explicit OrderBook(std::string instrument);
 
     using CrossCallback = std::function<void(Order*)>;
 
@@ -33,7 +31,7 @@ public:
     OrderBook(const OrderBook&) = delete;
     OrderBook& operator=(const OrderBook&) = delete;
 
-    // Cancell Orders
+    // Cancel Orders
     void cancelLimitOrder(unsigned int orderId);
     void cancelStopOrder(unsigned int orderId);
 
@@ -42,16 +40,16 @@ public:
     void modifyStopOrder(unsigned int orderId, double newPrice, int newQuantity);
 
     // Get the BBA
-    Order *getBestBid() const;
-    Order *getBestAsk() const;
+    [[nodiscard]] Order *getBestBid() const;
+    [[nodiscard]] Order *getBestAsk() const;
 
     // Print the OrderBook - Print all the price layers
     void printOrderBook() const;
 
-    // Print the Orderbook with desinated price range
-    void printOrderBook(double minPrice, double maxProce) const;
+    // Print the OrderBook with designated price range
+    void printOrderBook(double minPrice, double maxPrice) const;
 
-    // Print the Orderbook with desinated top N levels
+    // Print the OrderBook with designated top N levels
     void printOrderBook(int depth) const;
 
     friend class MatchingEngine;
@@ -116,4 +114,4 @@ private:
     void printPriceLevel(const PriceLevel *start, int depth) const;
 };
 
-#endif // ORDERBOOK_H
+#endif // ORDER_BOOK_H

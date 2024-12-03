@@ -1,17 +1,14 @@
 // IDGenerator.h
-#ifndef IDGENERATOR_H
-#define IDGENERATOR_H
+#ifndef MATCHING_ENGINE_ID_GENERATOR_H
+#define MATCHING_ENGINE_ID_GENERATOR_H
 
 #include <atomic>
-#include <string>
-#include <sstream>
-#include <iomanip>
 
 class IDGenerator
 {
 public:
     // Obtain singleton instance
-    static IDGenerator &getInstance()
+    static auto getInstance() -> IDGenerator &
     {
         static IDGenerator instance;
         return instance;
@@ -19,14 +16,14 @@ public:
 
     // Prohibit copy and assignment
     IDGenerator(const IDGenerator &) = delete;
-    IDGenerator &operator=(const IDGenerator &) = delete;
+    auto operator=(const IDGenerator &) -> IDGenerator & = delete;
 
-    unsigned int getNextOrderID()
+    auto getNextOrderID() -> unsigned int
     {
         return orderIDCounter.fetch_add(1, std::memory_order_relaxed);
     }
 
-    unsigned int getNextTradeID()
+    auto getNextTradeID() -> unsigned int
     {
         return tradeIDCounter.fetch_add(1, std::memory_order_relaxed);
     }
@@ -45,4 +42,4 @@ private:
     std::atomic<unsigned int> tradeIDCounter;
 };
 
-#endif // IDGENERATOR_H
+#endif // MATCHING_ENGINE_ID_GENERATOR_H

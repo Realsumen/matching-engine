@@ -1,25 +1,29 @@
-#ifndef ORDERMANAGER_H
-#define ORDERMANAGER_H
+#ifndef ORDER_MANAGER_H
+#define ORDER_MANAGER_H
 
-#include <thread>
 #include <atomic>
+#include <thread>
+#include "MatchingEngine.h"
+#include "Message.hpp"
+#include "MessageQueue.h"
 #include "Order.h"
 #include "OrderBook.h"
-#include "MatchingEngine.h"
-#include "MessageQueue.h"
-#include "Message.hpp"
-#include "IDGenerator.hpp"
 
 class OrderManager
 {
 public:
     OrderManager(MatchingEngine* engine, MessageQueue& messageQueue);
 
+    OrderManager(const OrderManager&) = delete;
+    auto operator=(const OrderManager&) -> OrderManager& = delete;
+
     void start();
 
     void stop();
 
     void handleAddMessage(const Message& message);
+
+    auto isRunning() -> bool;
 
 private:
     MatchingEngine* matchingEngine; // Matching Engine pointer
@@ -35,8 +39,8 @@ private:
 
     void handleCancelMessage(const Message& message);
 
-    Order* createOrder(const AddOrderDetails& details, unsigned int orderID) ;
+    auto createOrder(const AddOrderDetails& details, unsigned int orderID) -> Order* ;
 
 };
 
-#endif // ORDERMANAGER_H
+#endif // ORDER_MANAGER_H

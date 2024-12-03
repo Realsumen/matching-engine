@@ -1,5 +1,5 @@
-#ifndef ORDERTYPE_H
-#define ORDERTYPE_H
+#ifndef ORDER_TYPE_H
+#define ORDER_TYPE_H
 
 enum class OrderType {
     LIMIT,
@@ -7,4 +7,4 @@ enum class OrderType {
     STOP
 };
 
-#endif // ORDERTYPE_H
+#endif // ORDER_TYPE_H

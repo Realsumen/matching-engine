@@ -7,13 +7,17 @@
 #include "MessageQueue.h"
 #include "IDGenerator.hpp"
 
-OrderManager::OrderManager(MatchingEngine* engine, MessageQueue& queue)
-    : matchingEngine(engine), messageQueue(queue){}
+OrderManager::OrderManager(MatchingEngine* engine, MessageQueue& messageQueue)
+    : matchingEngine(engine), messageQueue(messageQueue){}
 
 void OrderManager::start()
 {
-    managerRunning = true;
-    messageProcessingThread = std::thread(&OrderManager::processLoop, this);
+    if (!managerRunning) {
+        managerRunning = true;
+        messageProcessingThread = std::thread(&OrderManager::processLoop, this);
+    } else {
+        std::cout << "OrderManager already running" << '\n';
+    }
 }
 
 void OrderManager::stop()
@@ -28,10 +32,11 @@ void OrderManager::stop()
 
 void OrderManager::processLoop()
 {
+    // while (managerRunning || !messageQueue.empty())
     while (managerRunning)
     {
         Message msg;
-        if (messageQueue.pop(msg, std::chrono::milliseconds(1000)))
+        if (messageQueue.tryPop(msg))
         {
             switch (msg.type)
             {
@@ -45,11 +50,13 @@ void OrderManager::processLoop()
                 handleCancelMessage(msg);
                 break;
             default:
-                std::cerr << "Unknown Message Type." << std::endl;
+                std::cerr << "Unknown Message Type." << '\n';
                 break;
             }
         }
-        
+    }
+    if (!messageQueue.empty()){
+        std::cerr << messageQueue.size() << " messages are in queue not processed.\n";
     }
 }
 
@@ -57,20 +64,26 @@ void OrderManager::handleAddMessage(const Message &message)
 {
     const AddOrderDetails &details = *message.addOrderDetails;
     const unsigned int newID = IDGenerator::getInstance().getNextOrderID();
-    const std::string instrument = details.instrument;
 
-    if (!matchingEngine->hasInstrument(instrument))
+    if (const std::string instrument = details.instrument; !matchingEngine->hasInstrument(instrument))
+        {
         throw std::invalid_argument("Unknown Instrument.");
+        }
 
-    if (matchingEngine->hasOrderId(newID))
+    if (matchingEngine->hasOrderId(newID)) {
         throw std::invalid_argument("Repeated order ID detected.");
+    }
 
     Order *newOrder = createOrder(details, newID);
     matchingEngine->processNewOrder(newOrder);
 
 }
 
-Order *OrderManager::createOrder(const AddOrderDetails& details, unsigned int orderID) 
+auto OrderManager::isRunning() -> bool {
+    return managerRunning;
+}
+
+auto OrderManager::createOrder(const AddOrderDetails& details, unsigned int orderID) -> Order * 
 {
     switch (details.type)
     {

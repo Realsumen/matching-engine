@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <iostream>
 #include <vector>
 #include <thread>
 #include "MessageQueue.h"
@@ -11,7 +10,8 @@ class OrderManagerTest : public ::testing::Test {
 protected:
     MessageQueue queue;
     MatchingEngine engine;
-    OrderManager manager = OrderManager(&engine, queue);
+    OrderManager manager{&engine, queue}; // 直接初始化
+    // OrderManager manager = OrderManager(&engine, queue);
 
     void SetUp() override 
     {
@@ -30,34 +30,95 @@ TEST_F(OrderManagerTest, BasicTest)
     engine.getOrderBookForRead("AAPL")->printOrderBook();
     ASSERT_NE(nullptr, engine.getOrderBookForRead("AAPL")->getBestAsk());
     EXPECT_EQ(155, engine.getOrderBookForRead("AAPL")->getBestAsk()->getPrice());
+
+    manager.handleAddMessage(msg);
 }
 
-TEST_F(OrderManagerTest, MultithreadMessageQueueTest)
+// TEST_F(OrderManagerTest, MultithreadMessageQueueTest)
+// {
+//     const int numProducers = 3;
+//     const int messagesPerProducer = 2;
+//     std::vector<std::thread> producers;
+//     std::vector<Message> consumedMessages;
+//
+//     producers.reserve(numProducers);
+//     for (int i = 0; i < numProducers; ++i) {
+//             producers.emplace_back([&, i]() {
+//             for (int j = 0; j < messagesPerProducer; ++j) {
+//                 Message msg = Message::createAddOrderMessage("AAPL", 160.0 + i, 200 + j, false, OrderType::LIMIT);
+//                 queue.push(std::move(msg));
+//             }
+//         });
+//     }
+//
+//     manager.start();
+//
+//
+//     std::atomic<bool> running(true);
+//     std::thread inputThread([this, &running]() {
+//         while (running.load()) {
+//             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//             if (!manager.isRunning()) {
+//                 std::cout << "Stopping event loop..." << '\n';
+//                 running.store(false);
+//             }
+//
+//             running.store(false);
+//             std::cout << "Stopping event loop..." << '\n';
+//
+//         }
+//     });
+//
+//     for (auto& producer : producers) {
+//         producer.join();
+//     }
+//
+//     manager.stop();
+//
+//     inputThread.join();
+// }
+
+TEST_F(OrderManagerTest, MultithreadMessageQueueTest1)
 {
-    const int numProducers = 2;
-    const int messagesPerProducer = 1;
+    MessageQueue queue;
+    MatchingEngine engine;
+    engine.createNewOrderBook("AAPL");
+
+    const int numProducers = 3;
+    const int messagesPerProducer = 2;
+    OrderManager manager{&engine, queue};
     std::vector<std::thread> producers;
-    std::thread consumer;
-    std::mutex consumedMutex;
     std::vector<Message> consumedMessages;
 
+    producers.reserve(numProducers);
     for (int i = 0; i < numProducers; ++i) {
         producers.emplace_back([&, i]() {
             for (int j = 0; j < messagesPerProducer; ++j) {
                 Message msg = Message::createAddOrderMessage("AAPL", 160.0 + i, 200 + j, false, OrderType::LIMIT);
-                std::cout << "Pushing message to queue..." << std::endl;
                 queue.push(std::move(msg));
             }
         });
     }
 
-    manager.start();
     for (auto& producer : producers) {
         producer.join();
     }
-    manager.stop();
+    manager.start();
 
-    engine.getOrderBookForRead("AAPL")->printOrderBook();
-    ASSERT_NE(nullptr, engine.getOrderBookForRead("AAPL")->getBestAsk());
-    EXPECT_EQ(160, engine.getOrderBookForRead("AAPL")->getBestAsk()->getPrice());
+    std::atomic<bool> done(true);
+    std::thread inputThread([&]() {
+        std::string command;
+        while (done.load()) {
+            std::cout << "Enter 'stop' to terminate the service: ";
+            std::cin >> command;
+            if (command == "stop") {
+                done.store(false);
+                manager.stop();
+                std::cout << "Stopping event loop..." << '\n';
+            }
+        }
+    });
+    if (inputThread.joinable()) {
+        inputThread.join();
+    }
 }

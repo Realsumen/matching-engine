@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 
-std::string timestampToString(const std::chrono::system_clock::time_point &timestamp)
+auto timestampToString(const std::chrono::system_clock::time_point &timestamp) -> std::string
 {
     // Alter the timestamp to seconds and nanoseconds since the epoch
     std::time_t time = std::chrono::system_clock::to_time_t(timestamp);
@@ -29,37 +29,37 @@ std::string timestampToString(const std::chrono::system_clock::time_point &times
     return oss.str();
 }
 
-std::chrono::system_clock::time_point currentTimestamp()
+auto currentTimestamp() -> std::chrono::system_clock::time_point
 {
     return std::chrono::system_clock::now();
 }
 
-double durationInNanoseconds(const std::chrono::system_clock::time_point &start,
-                             const std::chrono::system_clock::time_point &end)
+auto durationInNanoseconds(const std::chrono::system_clock::time_point &start,
+                             const std::chrono::system_clock::time_point &end) -> double
 {
     return std::chrono::duration<double, std::nano>(end - start).count();
 }
 
-double durationInMilliseconds(const std::chrono::system_clock::time_point &start,
-                              const std::chrono::system_clock::time_point &end)
+auto durationInMilliseconds(const std::chrono::system_clock::time_point &start,
+                              const std::chrono::system_clock::time_point &end) -> double
 {
     return std::chrono::duration<double, std::milli>(end - start).count();
 }
 
-double durationInSeconds(const std::chrono::system_clock::time_point &start,
-                         const std::chrono::system_clock::time_point &end)
+auto durationInSeconds(const std::chrono::system_clock::time_point &start,
+                         const std::chrono::system_clock::time_point &end) -> double
 {
     return std::chrono::duration<double>(end - start).count();
 }
 
-bool isTimestampBefore(const std::chrono::system_clock::time_point &lhs,
-                       const std::chrono::system_clock::time_point &rhs)
+auto isTimestampBefore(const std::chrono::system_clock::time_point &lhs,
+                       const std::chrono::system_clock::time_point &rhs) -> bool
 {
     return lhs < rhs;
 }
 
-bool isTimestampAfter(const std::chrono::system_clock::time_point &lhs,
-                      const std::chrono::system_clock::time_point &rhs)
+auto isTimestampAfter(const std::chrono::system_clock::time_point &lhs,
+                      const std::chrono::system_clock::time_point &rhs) -> bool
 {
     return lhs > rhs;
 }

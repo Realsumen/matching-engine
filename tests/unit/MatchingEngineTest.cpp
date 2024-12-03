@@ -71,7 +71,7 @@ TEST(MatchingEngineTest, MultiOrderProcessing)
     engine.processNewOrder(sellOrder2);
 
     std::vector<Trade> trades = engine.getTrades();
-    std::cout << trades[0].toString() << std::endl;
+    std::cout << trades[0].toString() << '\n';
     
     ASSERT_EQ(trades.size(), 1);
     EXPECT_EQ(trades[0].getBuyOrderId(), buyOrderId2);

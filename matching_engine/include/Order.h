@@ -1,7 +1,6 @@
 #ifndef ORDER_H
 #define ORDER_H
 
-#include <chrono>
 #include <string>
 #include "OrderType.h"
 
@@ -11,13 +10,13 @@ public:
     void setPrice(double new_price);
     void setQuantity(int new_quantity);
     
-    double getPrice() const;          // Getter for price
-    int getQuantity() const;          // Getter for quantity
-    unsigned int getId() const;       // Getter for id
-    std::string getAsset() const;
-    bool isBuy() const;               // Getter for is_buy
-    OrderType getType() const;        // Getter for type
-    std::chrono::system_clock::time_point getTimestamp() const; // Getter for timestamp
+    [[nodiscard]] double getPrice() const;          // Getter for price
+    [[nodiscard]] int getQuantity() const;          // Getter for quantity
+    [[nodiscard]] unsigned int getId() const;       // Getter for id
+    [[nodiscard]] std::string getAsset() const;
+    [[nodiscard]] bool isBuy() const;               // Getter for is_buy
+    [[nodiscard]] OrderType getType() const;        // Getter for type
+    [[nodiscard]] std::chrono::system_clock::time_point getTimestamp() const; // Getter for timestamp
 
     void displayOrderInfo() const;
 
@@ -37,7 +36,7 @@ private:
     OrderType type;    // order type
     std::chrono::system_clock::time_point timestamp; // timestamp
 
-    Order(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy, OrderType type);
+    Order(unsigned int id, std::string asset, double price, int quantity, bool is_buy, OrderType type);
 };
 
 #endif // ORDER_H

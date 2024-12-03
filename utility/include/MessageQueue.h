@@ -1,8 +1,7 @@
-#ifndef ORDERQUEUE_H
-#define ORDERQUEUE_H
+#ifndef ORDER_QUEUE_H
+#define ORDER_QUEUE_H
 
 #include <queue>
-#include <mutex>
 #include <chrono>
 #include <condition_variable>
 #include "Message.hpp"
@@ -13,17 +12,23 @@ public:
     ~MessageQueue();
 
     MessageQueue(const MessageQueue&) = delete;
-    MessageQueue& operator=(const MessageQueue&) = delete;
+    auto operator=(const MessageQueue&) -> MessageQueue& = delete;
+
+    MessageQueue(MessageQueue&&) = delete;
+    auto operator=(MessageQueue&&) -> MessageQueue& = delete;
 
     void push(Message&& msg);
 
-    bool pop(Message& msg, std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+    auto pop(Message& msg) -> bool;
+    /* 
+    * @param timeout: Used for testing scenario
+    */
 
-    bool tryPop(Message& msg);
+    auto tryPop(Message& msg) -> bool;
 
-    bool empty() const;
+    auto empty() const -> bool;
 
-    size_t size() const;
+    auto size() const -> size_t;
 
 private:
     mutable std::mutex m_mutex;                // The mutex protecting the queue
@@ -31,4 +36,4 @@ private:
     std::queue<Message> m_queue;               // Internal message queue
 };
 
-#endif // ORDERQUEUE_H
+#endif // ORDER_QUEUE_H

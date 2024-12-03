@@ -1,9 +1,14 @@
 # Build and Output directories
 /build/
+/cmake-build-debug/
+.cache/
 
 # IDE specific files
 .vscode/
+.idea/
+.clang-tidy
 
 # Development files
 /deprecated/
-/docs/fast_instructions.txt
+/docs/*.txt
+/docs/LIST.md

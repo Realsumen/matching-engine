@@ -2,24 +2,21 @@
 #define PROTOCOL_PARSER_H
 
 #include <string>
-#include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
 #include "Message.hpp"
 #include "Trade.h"
 
 class ProtocolParser {
 public:
-    static Message parse(const std::string& rawData, const std::string& protocol);
+    static auto parse(const std::string& rawData, const std::string& protocol) -> Message;
 
-    static std::string serialize(const Message& message, const std::string& protocol);
+    static auto serialize(const Message& message, const std::string& protocol) -> std::string;
 
 private:
     ProtocolParser() = default;
 
-    static Message parseTCP(const std::string& rawData);
+    static auto parseTCP(const std::string& rawData) -> Message;
 
-    static std::string serializeTCPTrades(const std::vector<Trade>& trades);
+    static auto serializeTCPTrades(const std::vector<Trade>& trades) -> std::string;
 
 };
 

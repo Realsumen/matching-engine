@@ -3,8 +3,8 @@
 #include "OrderType.h"
 #include "Order.h"
 
-Order::Order(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy, OrderType type)
-    : id(id), asset(asset), price(price), quantity(quantity), is_buy(is_buy), type(type),
+Order::Order(const unsigned int id, std::string asset, const double price, const int quantity, const bool is_buy, const OrderType type)
+    : id(id), asset(std::move(asset)), price(price), quantity(quantity), is_buy(is_buy), type(type),
       timestamp(currentTimestamp())
 {
     if (price > 0.0)
@@ -26,7 +26,7 @@ Order::Order(unsigned int id, const std::string &asset, double price, int quanti
     }
 }
 
-void Order::setPrice(double new_price)
+void Order::setPrice(const double new_price)
 {
     if (new_price > 0.0)
     {
@@ -38,7 +38,7 @@ void Order::setPrice(double new_price)
     }
 }
 
-void Order::setQuantity(int new_quantity)
+void Order::setQuantity(const int new_quantity)
 {
     if (new_quantity < 0)
     {
@@ -51,12 +51,12 @@ void Order::setQuantity(int new_quantity)
     quantity = new_quantity;
 }
 
-double Order::getPrice() const
+auto Order::getPrice() const -> double
 {
     return price;
 }
 
-int Order::getQuantity() const
+auto Order::getQuantity() const -> int
 {
     return quantity;
 }
@@ -81,7 +81,7 @@ OrderType Order::getType() const
     return type;
 }
 
-std::chrono::system_clock::time_point Order::getTimestamp() const
+auto Order::getTimestamp() const -> std::chrono::system_clock::time_point
 {
     return timestamp;
 }
@@ -100,7 +100,7 @@ void Order::displayOrderInfo() const
               << " \n";
 }
 
-bool Order::operator==(const Order &other) const
+auto Order::operator==(const Order &other) const -> bool
 {
     /*
         This method only compare the price between two orders.
@@ -109,7 +109,7 @@ bool Order::operator==(const Order &other) const
     return flag;
 }
 
-bool Order::operator<(const Order &other) const
+auto Order::operator<(const Order &other) const -> bool
 {
     /*
         This method only compare the price between two orders.
@@ -118,17 +118,17 @@ bool Order::operator<(const Order &other) const
     return flag;
 }
 
-Order* Order::CreateMarketOrder(unsigned int id, const std::string &asset, int quantity, bool is_buy)
+Order* Order::CreateMarketOrder(const unsigned int id, const std::string &asset, const int quantity, const bool is_buy)
 {
     return new Order(id, asset, -1.0, quantity, is_buy, OrderType::MARKET);
 }
 
-Order* Order::CreateLimitOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy)
+Order* Order::CreateLimitOrder(const unsigned int id, const std::string &asset, const double price, const int quantity, const bool is_buy)
 {
     return new Order(id, asset, price, quantity, is_buy, OrderType::LIMIT);
 }
 
-Order* Order::CreateStopOrder(unsigned int id, const std::string &asset, double price, int quantity, bool is_buy)
+Order* Order::CreateStopOrder(const unsigned int id, const std::string &asset, const double price, const int quantity, const bool is_buy)
 {
     return new Order(id, asset, price, quantity, is_buy, OrderType::STOP);
 }

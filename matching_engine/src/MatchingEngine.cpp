@@ -1,13 +1,13 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
 #include "MatchingEngine.h"
+#include "Logger.hpp"
+#include "matching_engine_config.hpp"
 #include "Trade.h"
 #include "Order.h"
 #include "OrderBook.h"
 #include "IDGenerator.hpp"
 #include "OrderType.h"
-#include "TimestampUtility.h"
 
 MatchingEngine::MatchingEngine()
 {
@@ -18,9 +18,14 @@ MatchingEngine::MatchingEngine()
     trades = std::vector<Trade>();
 }
 
+MatchingEngine::~MatchingEngine()
+{
+
+}
+
 void MatchingEngine::createNewOrderBook(const std::string &instrument)
 {
-    OrderBook *newOrderBook = new OrderBook(instrument);
+    auto *newOrderBook = new OrderBook(instrument);
     newOrderBook->setCrossCallback(
         [this](Order* order) { this->processNewOrder(order); }
     );
@@ -29,24 +34,24 @@ void MatchingEngine::createNewOrderBook(const std::string &instrument)
 
 void MatchingEngine::removeOrderBook(const std::string &instrument)
 {
-    auto it = orderBooks.find(instrument);
-    if (it != orderBooks.end())
+    auto iter = orderBooks.find(instrument);
+    if (iter != orderBooks.end())
     {
-        delete it->second;
-        orderBooks.erase(it);
-        std::cout << "Target instrument has been removed successfully." << std::endl;
+        delete iter->second;
+        orderBooks.erase(iter);
+        std::cout << "Target instrument has been removed successfully." << '\n';
     } 
     else 
     {
-        std::cerr<<"Tried to remove a nonexisting instrument." << std::endl;
+        std::cerr<<"Tried to remove a nonexistent instrument." << '\n';
     }
 }
 
-std::vector<Trade> MatchingEngine::processNewOrder(Order *order)
+auto MatchingEngine::processNewOrder(Order *order) -> std::vector<Trade>
 {
     std::vector<Trade> trades;
 
-    OrderType type = order->getType();
+    const OrderType type = order->getType();
 
     globalOrderIds.insert(order->getId());
 
@@ -68,18 +73,21 @@ std::vector<Trade> MatchingEngine::processNewOrder(Order *order)
         throw std::invalid_argument("Unknown Order Type.");
     }
 
-    // Add trade records
+
+    auto logger = Logger::getLogger(Matching_Engine_Config::MathingEngine::LOGGER_NAME);
+    for (const auto& trade : trades) {
+        logger->info(trade.toString());
+    }
     this->trades.insert(this->trades.end(), trades.begin(), trades.end());
+    
     return trades;
 }
 
-void MatchingEngine::cancelOrder(unsigned int orderId, const std::string &instrument)
+void MatchingEngine::cancelOrder(const unsigned int orderId, const std::string &instrument)
 {
     OrderBook *orderBook = getOrderBook(instrument);
 
-    OrderType type = orderBook->orderIdToOrderNode[orderId]->order->getType();
-
-    if (type == OrderType::LIMIT)
+    if (const OrderType type = orderBook->orderIdToOrderNode[orderId]->order->getType(); type == OrderType::LIMIT)
     {
         orderBook->cancelLimitOrder(orderId);
     }
@@ -89,7 +97,7 @@ void MatchingEngine::cancelOrder(unsigned int orderId, const std::string &instru
     }
     else
     {
-        std::cout<<"Does not support cancellation for market order "<<std::endl;
+        std::cout<<"Does not support cancellation for market order " << '\n';
     }
     
 }
@@ -98,9 +106,7 @@ void MatchingEngine::modifyOrder(unsigned int orderId, const std::string &instru
 {
     OrderBook *orderBook = getOrderBook(instrument);
 
-    OrderType type = orderBook->orderIdToOrderNode[orderId]->order->getType();
-
-    if (type == OrderType::LIMIT)
+    if (OrderType type = orderBook->orderIdToOrderNode[orderId]->order->getType(); type == OrderType::LIMIT)
     {
         orderBook->modifyLimitOrder(orderId, newPrice, newQuantity);
     }
@@ -110,37 +116,36 @@ void MatchingEngine::modifyOrder(unsigned int orderId, const std::string &instru
     }
     else
     {
-        std::cout<<"Does not support modification for market order "<<std::endl;
+        std::cout << "Does not support modification for market order " << '\n';
     }
     
 }
 
-std::vector<Trade> MatchingEngine::getTrades() const
+auto MatchingEngine::getTrades()  -> std::vector<Trade>
 {
     return trades;
 }
 
-double MatchingEngine::getLastTradePrice(const std::string &instrument)
+auto MatchingEngine::getLastTradePrice(const std::string &instrument) -> double
 {
     return instrumentToTradedPrice[instrument];
 }
 
-const OrderBook *MatchingEngine::getOrderBookForRead(const std::string &instrument) const
-{   
-    auto it = orderBooks.find(instrument);
-    return (it != orderBooks.end()) ? it->second : nullptr;
+auto MatchingEngine::getOrderBookForRead(const std::string &instrument) const -> const OrderBook *
+{
+    const auto iter = orderBooks.find(instrument);
+    return (iter != orderBooks.end()) ? iter->second : nullptr;
 }
 
-bool MatchingEngine::hasOrder(std::string instrument, unsigned int orderId)
+auto MatchingEngine::hasOrder(const std::string& instrument, unsigned int orderId) -> bool
 {   
     OrderBook *book = orderBooks[instrument];
     return (book->orderIdToOrderNode.find(orderId) != book->orderIdToOrderNode.end());
 }
 
-bool MatchingEngine::hasInstrument(std::string instrument)
+auto MatchingEngine::hasInstrument(const std::string& instrument) -> bool
 {
-    auto it = orderBooks.find(instrument);
-    if (it == orderBooks.end())
+    if (const auto iter = orderBooks.find(instrument); iter == orderBooks.end())
     {
         return false;
     }
@@ -149,19 +154,19 @@ bool MatchingEngine::hasInstrument(std::string instrument)
     }
 }
 
-bool MatchingEngine::hasOrderId(unsigned int orderId)
+auto MatchingEngine::hasOrderId(const unsigned int orderId) -> bool
 {
     return (globalOrderIds.find(orderId) != globalOrderIds.end());
 }
 
-std::vector<Trade> MatchingEngine::processLimitOrder(Order *order)
+auto MatchingEngine::processLimitOrder(Order *order) -> std::vector<Trade>
 {   
     // If limit order does not enter the matching process, this vector is empty
     std::vector<Trade> trades;
-    OrderBook *orderbook = getOrderBook(order->getAsset());
+    OrderBook *orderBook = getOrderBook(order->getAsset());
 
     const bool isBuy = order->isBuy();
-    OrderBook::PriceLevel *bestLevel = isBuy ? orderbook->bestAskLevel : orderbook->bestBidLevel;
+    const OrderBook::PriceLevel *bestLevel = isBuy ? orderBook->bestAskLevel : orderBook->bestBidLevel;
     bool shouldMatch = false;
     if (bestLevel != nullptr) {
         shouldMatch = isBuy ? (order->getPrice() >= bestLevel->price)
@@ -175,17 +180,17 @@ std::vector<Trade> MatchingEngine::processLimitOrder(Order *order)
 
     if (order->getQuantity() > 0)
     {
-        orderbook->addLimitOrderToBook(order);
+        orderBook->addLimitOrderToBook(order);
     }
 
     return trades;
 }
 
-std::vector<Trade> MatchingEngine::processMarketOrder(Order *order)
+auto MatchingEngine::processMarketOrder(Order *order) -> std::vector<Trade>
 {
-    int originalQuantity = order->getQuantity();
+    const int originalQuantity = order->getQuantity();
     std::vector<Trade> trades = matchOrder(order);
-    int newQuantity = order->getQuantity();
+    const int newQuantity = order->getQuantity();
 
     if (order->getQuantity() > 0)
     {
@@ -193,13 +198,11 @@ std::vector<Trade> MatchingEngine::processMarketOrder(Order *order)
         << originalQuantity - newQuantity << "filled." << "remaining Quantity: " 
         << newQuantity << "\n";
     }
-
     delete order;
-
     return trades;
 }
 
-std::vector<Trade> MatchingEngine::processStopOrder(Order *order)
+auto MatchingEngine::processStopOrder(Order *order) -> std::vector<Trade>
 {
     // TODO: Stop Order logic
     bool isBuy = order->isBuy();
@@ -214,28 +217,29 @@ std::vector<Trade> MatchingEngine::processStopOrder(Order *order)
         
     }
     
-    return std::vector<Trade>();
+    return {};
 }
 
-std::vector<Trade> MatchingEngine::matchOrder(Order *order)
+
+auto MatchingEngine::matchOrder(Order *order) -> std::vector<Trade>
 {   
     // TODO: Trigger logic for Stop Order
     std::vector<Trade> trades;
 
     const std::string instrument = order->getAsset();
-    OrderBook *orderbook = getOrderBook(instrument);
+    OrderBook *orderBook = getOrderBook(instrument);
     int remainingQuantity = order->getQuantity();
     bool is_buy = order->isBuy();
 
     // Determine the best opposite quote
-    OrderBook::PriceLevel *bestLevel = is_buy ? orderbook->bestAskLevel:orderbook->bestBidLevel;
+    OrderBook::PriceLevel *bestLevel = is_buy ? orderBook->bestAskLevel:orderBook->bestBidLevel;
 
     while (remainingQuantity > 0 && bestLevel != nullptr)
-    {   
+    {
         // Iterate PriceLevel one by one
         OrderBook::OrderNode *oppositeOrderNode = bestLevel -> headOrder;
         double tradedPrice = bestLevel->price;
-        
+
         if (order->getType() == OrderType::LIMIT)
         {
             // For a limit order that enters the matching process, check the price condition
@@ -251,14 +255,14 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
             // Iterate all the OrderNodes within a PriceLevel
             Order *oppositeOrder = oppositeOrderNode -> order;
             int oppositeQuantity = oppositeOrder->getQuantity();
-            int tradedQuantity = std::min(oppositeQuantity, remainingQuantity);
-            unsigned int newTradeId = IDGenerator::getInstance().getNextTradeID();
+            const int tradedQuantity = std::min(oppositeQuantity, remainingQuantity);
+            const unsigned int newTradeId = IDGenerator::getInstance().getNextTradeID();
 
-            Trade trade(newTradeId, 
+            Trade trade(newTradeId,
                 is_buy ? order->getId() : oppositeOrder->getId(),
                 is_buy ? oppositeOrder->getId() : order->getId(),
-                instrument, 
-                tradedPrice, 
+                instrument,
+                tradedPrice,
                 tradedQuantity);
             trades.push_back(trade);
 
@@ -267,17 +271,17 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
 
             // Update maker
             if (oppositeOrder->getQuantity() == tradedQuantity) {
-                // If the opposite orderNode's quantity is 0, we need to remove the node and delete the order 
-                // When we remove the order, it will perform level quantity update and level delete automatcially
-                orderbook -> orderIdToOrderNode.erase(oppositeOrder->getId());
+                // If the opposite orderNode's quantity is 0, we need to remove the node and delete the order
+                // When we remove the order, it will perform level quantity update and level delete automatically
+                orderBook -> orderIdToOrderNode.erase(oppositeOrder->getId());
                 OrderBook::OrderNode *nextNode = oppositeOrderNode->next;
-                orderbook -> removeOrderNodeFromBook(oppositeOrderNode);
+                orderBook -> removeOrderNodeFromBook(oppositeOrderNode);
                 delete oppositeOrder;
                 oppositeOrderNode = nextNode;
 
                 if (oppositeOrderNode == nullptr)
                 {
-                    bestLevel = is_buy ? orderbook->bestAskLevel : orderbook->bestBidLevel;
+                    bestLevel = is_buy ? orderBook->bestAskLevel : orderBook->bestBidLevel;
                 }
             }
             else
@@ -298,7 +302,7 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
         if (!isLastTrade)
         {
             // Before the last trades, all the status for opposite orders are SUCCESS
-            if (is_buy) 
+            if (is_buy)
             {
                 trade.setSellOrderStatus(TradeStatus::SUCCESS);
                 trade.setBuyOrderStatus(TradeStatus::PARTIALLY_FILLED);
@@ -307,17 +311,17 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
                 trade.setSellOrderStatus(TradeStatus::PARTIALLY_FILLED);
             }
         } else
-        {   
+        {
             // For the last trade, check if the opposite order is in orderIdToOrderNode
             // If yes, then the order is success and opposite order is PARTIALLY_FILLED
-            if (is_buy) 
+            if (is_buy)
             {
-                bool opposieOrderInMap = orderbook->orderIdToOrderNode.find(trade.getSellOrderId()) != orderbook->orderIdToOrderNode.end();
-                trade.setSellOrderStatus(opposieOrderInMap ? TradeStatus::PARTIALLY_FILLED : TradeStatus::SUCCESS);
+                const bool oppositeOrderInMap = orderBook->orderIdToOrderNode.find(trade.getSellOrderId()) != orderBook->orderIdToOrderNode.end();
+                trade.setSellOrderStatus(oppositeOrderInMap ? TradeStatus::PARTIALLY_FILLED : TradeStatus::SUCCESS);
                 trade.setBuyOrderStatus(remainingQuantity != 0 ? TradeStatus::PARTIALLY_FILLED : TradeStatus::SUCCESS);
             } else {
-                bool opposieOrderInMap = orderbook->orderIdToOrderNode.find(trade.getBuyOrderId()) != orderbook->orderIdToOrderNode.end();
-                trade.setBuyOrderStatus(opposieOrderInMap ? TradeStatus::PARTIALLY_FILLED : TradeStatus::SUCCESS);
+                const bool oppositeOrderInMap = orderBook->orderIdToOrderNode.find(trade.getBuyOrderId()) != orderBook->orderIdToOrderNode.end();
+                trade.setBuyOrderStatus(oppositeOrderInMap ? TradeStatus::PARTIALLY_FILLED : TradeStatus::SUCCESS);
                 trade.setSellOrderStatus(remainingQuantity != 0 ? TradeStatus::PARTIALLY_FILLED : TradeStatus::SUCCESS);
             }
         }
@@ -325,17 +329,16 @@ std::vector<Trade> MatchingEngine::matchOrder(Order *order)
 
     order->setQuantity(remainingQuantity);
 
-    // Update the Latest price for the instrument
     if (!trades.empty()) {
         instrumentToTradedPrice[instrument] = trades.back().getPrice();
     }
     return trades;
 }
 
-OrderBook *MatchingEngine::getOrderBook(const std::string &instrument)
-{   
-    auto it = orderBooks.find(instrument);
-    return (it != orderBooks.end()) ? it->second : nullptr;
+auto MatchingEngine::getOrderBook(const std::string &instrument) -> OrderBook*
+{
+    const auto iter = orderBooks.find(instrument);
+    return (iter != orderBooks.end()) ? iter->second : nullptr;
 }
 
 
