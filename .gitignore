@@ -7,9 +7,8 @@
 .vscode/
 .idea/
 .clang-tidy
-.DS_Store
 
 # Development files
 /deprecated/
 /docs/*.txt
-/docs/LIST.md
+/docs/LIST.md.DS_Store
