@@ -11,4 +11,4 @@
 # Development files
 /deprecated/
 /docs/*.txt
-/docs/LIST.md.DS_Store
+.DS_Store
