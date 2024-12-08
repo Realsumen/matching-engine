@@ -8,8 +8,8 @@ namespace mainConfig {
 
 namespace systemLauncher {
     // Logger Configuration
-    constexpr std::string LOGGER_NAME = "SystemLauncher";
-    constexpr std::string LOGGER_PATTERN = "%v"; // 仅显示日志消息
+    constexpr auto LOGGER_NAME = "SystemLauncher";
+    constexpr auto LOGGER_PATTERN = "%v"; // 仅显示日志消息
 
     // Command Names
     constexpr char STOP_COMMAND[] = "stop";
@@ -42,7 +42,7 @@ namespace systemLauncher {
     constexpr char LOG_INIT_ASYNC_FAILED[] = "Initialize async failed: {}";
     constexpr char LOG_COMMAND_RECEIVED[] = "Command '{}' received.";
 
-    constexpr char DEFAULT_ORDERBOOK_INSTRUMENT[] = "AAPL";
+    constexpr auto DEFAULT_ORDERBOOK_INSTRUMENT = "AAPL";
 }
 
 

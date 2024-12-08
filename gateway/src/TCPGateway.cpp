@@ -143,7 +143,7 @@ void TCPGateway::start(const std::string &ip, const int port)
         int accept_ret = uv_accept(client, reinterpret_cast<uv_stream_t *>(connection));
         if (accept_ret == 0) 
         {
-            auto* gateway = static_cast<TCPGateway*>(client->data);
+            auto* gateway = static_cast<TCPGateway*>(static_cast<HandleData*>(client->data)->gateway);
             unsigned int client_id = IDGenerator::getInstance().getNextClientID();
 
             {

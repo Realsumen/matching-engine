@@ -32,9 +32,9 @@ void SystemLauncher::run()
 {
     messageQueue_ = std::make_unique<MessageQueue>();
     engine_ = std::make_unique<MatchingEngine>();
-    manager_ = std::make_unique<OrderManager>(engine_.get(), *messageQueue_);
-
     gateway_ = std::make_shared<TCPGateway>(&loop_, *messageQueue_);
+    manager_ = std::make_unique<OrderManager>(engine_.get(), *messageQueue_, gateway_.get());
+
     engine_->createNewOrderBook(DEFAULT_ORDERBOOK_INSTRUMENT);
 
     manager_->start();
