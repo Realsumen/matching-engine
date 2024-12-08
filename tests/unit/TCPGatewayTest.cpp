@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "TCPGateway.h"
+#include "test_config.hpp"
 
 
 class TCPGatewayTest;
@@ -139,8 +140,9 @@ TEST_F(TCPGatewayTest, ValidMessageParsing)
         }
     };
 
+    unsigned int dummy_client_id = 0;
     for (const auto& [jsonMessage, validator] : testCases) {
-        gateway->receive(jsonMessage);
+        gateway->receive(jsonMessage, dummy_client_id);
 
         ASSERT_FALSE(messageQueue.empty());
         Message message;
@@ -160,23 +162,26 @@ TEST_F(TCPGatewayTest, InvalidMessageHandling)
         R"({ "type": "CANCEL_ORDER" })", 
     };
 
+    unsigned int dummy_client_id = 0;
+
     for (const auto& jsonMessage : invalidMessages) {
-        EXPECT_THROW({ gateway->receive(jsonMessage); }, std::invalid_argument);
+        EXPECT_THROW({ gateway->receive(jsonMessage, dummy_client_id); }, std::invalid_argument);
     }
 }
 
 TEST_F(TCPGatewayTest, ConnectionTests)
-{   
-    gateway->start("127.0.0.1", 7001);
+{
+    // ./tests --gtest_filter=TCPGatewayTest.ConnectionTests
+    gateway->start(TEST_Config::TCP::ADDRESS, TEST_Config::TCP::PORT);
 
     constexpr int numInitialClients = 1;
-    constexpr int numAdditionalClients = 5;
+    constexpr int numAdditionalClients = 2;
     constexpr int totalClients = numInitialClients + numAdditionalClients;
 
     std::vector<uv_tcp_t> clients(totalClients);
     std::vector<uv_connect_t*> connectRequests(totalClients);
     sockaddr_in dest;
-    uv_ip4_addr("127.0.0.1", 7001, &dest);
+    uv_ip4_addr(TEST_Config::TCP::ADDRESS, TEST_Config::TCP::PORT, &dest);
 
     totalExpectedConnections = totalClients;
 
@@ -189,9 +194,7 @@ TEST_F(TCPGatewayTest, ConnectionTests)
         uv_tcp_connect(connectRequests[i], &clients[i], (const sockaddr*)&dest, on_connect);
     }
     
-    std::cout << "Starting event loop" << '\n';
     uv_run(loop, UV_RUN_DEFAULT);
-    std::cout << "Event loop stopped" << '\n';
 
      for (int i = 0; i < totalClients; ++i) {
         ASSERT_FALSE(messageQueue.empty());

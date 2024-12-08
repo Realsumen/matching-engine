@@ -9,7 +9,7 @@ if(DEBUG)
     endif()
 endif()
 
-project(MatchingEngine VERSION 0.1)
+project(MatchingEngineSystem VERSION 0.1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -28,33 +28,40 @@ target_include_directories(config_headers INTERFACE include/config)
 file(GLOB UTILITY_SOURCES "utility/src/*.cpp" "utility/include/*.hpp")
 add_library(utility_lib ${UTILITY_SOURCES})
 target_include_directories(utility_lib PUBLIC utility/include)
-target_link_libraries(utility_lib PUBLIC spdlog::spdlog config_headers)
+target_link_libraries(utility_lib PUBLIC spdlog::spdlog config_headers libuv::libuv)
 
 # Add gateway files
 file(GLOB GATEWAY_SOURCES "gateway/src/*.cpp" "gateway/include/*.hpp")
 add_library(gateway_lib ${GATEWAY_SOURCES})
 target_include_directories(gateway_lib PUBLIC gateway/include lib/rapidjson/include)
-target_link_libraries(gateway_lib PUBLIC utility_lib libuv::libuv config_headers)
+target_link_libraries(gateway_lib PUBLIC utility_lib config_headers)
 
-# Add matching engine files excluding main.cpp
-file(GLOB MAIN_SOURCES "matching_engine/src/*.cpp")
-add_library(matching_engine_lib ${MAIN_SOURCES})
+# Add matching engine files
+file(GLOB MATCHING_ENGINE_SOURCES "matching_engine/src/*.cpp")
+add_library(matching_engine_lib ${MATCHING_ENGINE_SOURCES})
 target_include_directories(matching_engine_lib PUBLIC matching_engine/include utility/include gateway/include)
 target_link_libraries(matching_engine_lib PRIVATE gateway_lib utility_lib spdlog::spdlog config_headers)
 
+# Integrating system
+file(GLOB SYSTEM_SOURCES "src/*.cpp")
+list(REMOVE_ITEM SYSTEM_SOURCES "src/main.cpp")
+add_library(system_lib ${SYSTEM_SOURCES})
+target_include_directories(system_lib PUBLIC src/include matching_engine/include utility/include gateway/include)
+target_link_libraries(system_lib PRIVATE gateway_lib utility_lib spdlog::spdlog config_headers)
+
 # Main executable
-add_executable(matching_engine src/main.cpp)
-target_link_libraries(matching_engine PRIVATE matching_engine_lib gateway_lib spdlog::spdlog config_headers)
+add_executable(matching_engine_system src/main.cpp)
+target_link_libraries(matching_engine_system PRIVATE system_lib matching_engine_lib gateway_lib spdlog::spdlog config_headers)
 
 # Set output directories for main executable
-set_target_properties(matching_engine PROPERTIES
+set_target_properties(matching_engine_system PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
 # Add custom flags for main executable
-target_compile_options(matching_engine PRIVATE -Wall -Wextra -Werror)
+target_compile_options(matching_engine_system PRIVATE -Wall -Wextra -Werror)
 
 option(USE_TSAN "Enable ThreadSanitizer" OFF)
 

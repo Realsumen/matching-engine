@@ -4,11 +4,13 @@
 
 #include "MatchingEngine.h"
 #include "OrderManager.h"
+#include "matching_engine_config.hpp"
 #include "MessageQueue.h"
 #include "IDGenerator.hpp"
+#include "Logger.hpp"
 
-OrderManager::OrderManager(MatchingEngine* engine, MessageQueue& messageQueue)
-    : matchingEngine(engine), messageQueue(messageQueue){}
+OrderManager::OrderManager(MatchingEngine* engine, MessageQueue& messageQueue, TCPGateway* gateway)
+    : matchingEngine(engine), messageQueue(messageQueue), gateway(gateway){}
 
 void OrderManager::start()
 {
@@ -21,38 +23,45 @@ void OrderManager::start()
 }
 
 void OrderManager::stop()
-{
-    managerRunning = false;
-    if (messageProcessingThread.joinable())
-    {
-        messageProcessingThread.join();
+{   if (managerRunning) {
+        managerRunning = false;
+        messageQueue.shutdown();
+        if (messageProcessingThread.joinable()) {
+            messageProcessingThread.join();
+        }
+    } else {
+        Logger::getLogger(matchingSystemConfig::orderManager::LOGGER_NAME)->error("OrderManager is not running" );
     }
-    
 }
 
 void OrderManager::processLoop()
 {
-    // while (managerRunning || !messageQueue.empty())
     while (managerRunning)
     {
-        Message msg;
-        if (messageQueue.tryPop(msg))
+        const auto logger = Logger::getLogger(matchingSystemConfig::orderManager::LOGGER_NAME);
+        if (Message msg; messageQueue.pop(msg))
         {
             switch (msg.type)
             {
             case MessageType::ADD_ORDER:
                 handleAddMessage(msg);
+                logger->info(msg.addOrderDetails->toString());
                 break;
             case MessageType::MODIFY_ORDER:
                 handleModifyMessage(msg);
+                logger->info(msg.modifyDetails->toString());
                 break;
             case MessageType::CANCEL_ORDER:
                 handleCancelMessage(msg);
+                logger->info(msg.cancelDetails->toString());
                 break;
             default:
                 std::cerr << "Unknown Message Type." << '\n';
                 break;
             }
+        } else {
+            // If messageQueue.pop(), suggesting that the queue is already closed.
+            break;
         }
     }
     if (!messageQueue.empty()){
@@ -76,6 +85,12 @@ void OrderManager::handleAddMessage(const Message &message)
 
     Order *newOrder = createOrder(details, newID);
     matchingEngine->processNewOrder(newOrder);
+
+    const std::string response = "Order added successfully with ID: " + std::to_string(newID);
+
+    if (gateway != nullptr) {
+        gateway->queueMessageToSend(message.client_id, response);
+    }
 
 }
 

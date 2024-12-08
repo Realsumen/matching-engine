@@ -2,8 +2,8 @@
 #define ORDER_MANAGER_H
 
 #include <atomic>
+#include <TCPGateway.h>
 #include <thread>
-#include "MatchingEngine.h"
 #include "Message.hpp"
 #include "MessageQueue.h"
 #include "Order.h"
@@ -12,7 +12,7 @@
 class OrderManager
 {
 public:
-    OrderManager(MatchingEngine* engine, MessageQueue& messageQueue);
+    OrderManager(MatchingEngine* engine, MessageQueue& messageQueue, TCPGateway* gateway = {});
 
     OrderManager(const OrderManager&) = delete;
     auto operator=(const OrderManager&) -> OrderManager& = delete;
@@ -28,6 +28,7 @@ public:
 private:
     MatchingEngine* matchingEngine; // Matching Engine pointer
     MessageQueue& messageQueue;     // Reference to message queue
+    TCPGateway* gateway{};
 
     std::thread messageProcessingThread;      // Thread for processing messages
     std::atomic<bool> managerRunning{false};         // Flag to control message processing loop

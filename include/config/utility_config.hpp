@@ -13,8 +13,8 @@ namespace Utility_Config {
     namespace Logging {
         constexpr int LOG_QUEUE_SIZE = 8192;
         constexpr int LOG_THREADS = 1;
-        constexpr const char* DEFAULT_LOGGER_NAME = "default_logger";
-        constexpr const char* LOG_PATTERN = "[%Y-%m-%d %H:%M:%S.%e] [%l] %v";
+        constexpr auto DEFAULT_LOGGER_NAME = "default_logger";
+        constexpr auto LOG_PATTERN = "[%Y-%m-%d %H:%M:%S.%e] [%l] %v";
     }
 }
 

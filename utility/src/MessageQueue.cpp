@@ -19,7 +19,12 @@ void MessageQueue::push(Message&& msg) {
 auto MessageQueue::pop(Message& msg) -> bool {
     // The incoming parameter msg is used to store the information popped out of the queue
     std::unique_lock<std::mutex> lock(m_mutex);
-    m_condVar.wait(lock, [this]() { return !m_queue.empty(); }); // Block and wait until the queue is not empty
+    m_condVar.wait(lock, [this]() { return !m_queue.empty() || m_shutdown; }); // Block and wait until the queue is not empty
+
+    if (m_shutdown && m_queue.empty()) {
+        return false;
+    }
+
 
     if (!m_queue.empty()) {
         msg = std::move(m_queue.front());
@@ -48,4 +53,17 @@ auto MessageQueue::empty() const -> bool {
 auto MessageQueue::size() const -> size_t {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_queue.size();
+}
+
+void MessageQueue::shutdown() {
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_shutdown = true;
+    }
+    m_condVar.notify_all(); // 通知所有等待的线程
+}
+
+bool MessageQueue::isShutdown() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_shutdown;
 }

@@ -1,7 +1,7 @@
 #ifndef ORDER_TYPE_H
 #define ORDER_TYPE_H
 
-enum class OrderType {
+enum class OrderType : std::uint8_t {
     LIMIT,
     MARKET,
     STOP

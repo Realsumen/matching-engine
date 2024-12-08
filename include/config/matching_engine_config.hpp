@@ -1,14 +1,19 @@
 #ifndef MATCHING_ENGINE_CONFIG_HPP
 #define MATCHING_ENGINE_CONFIG_HPP
 
-namespace Matching_Engine_Config {
+namespace matchingSystemConfig {
 
-    namespace OrderBook {
-    
+    namespace orderBook {
+
     }
 
-    namespace MathingEngine {
-        constexpr const char* LOGGER_NAME = "matchingEngine";
+    namespace orderManager {
+        constexpr auto LOGGER_NAME = "orderManager";
+    }
+
+    namespace mathingEngine {
+        constexpr auto LOGGER_NAME = "matchingEngine";
+
     }
 
 }

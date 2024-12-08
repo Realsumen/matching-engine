@@ -23,17 +23,26 @@ MatchingEngine::~MatchingEngine()
 
 }
 
-void MatchingEngine::createNewOrderBook(const std::string &instrument)
+bool MatchingEngine::createNewOrderBook(const std::string &instrument)
 {
-    auto *newOrderBook = new OrderBook(instrument);
-    newOrderBook->setCrossCallback(
-        [this](Order* order) { this->processNewOrder(order); }
-    );
-    orderBooks[instrument] = newOrderBook;
+    {
+        std::unique_lock<std::shared_mutex> lock(orderBooksMutex);  // 写锁
+        if (orderBooks.find(instrument) != orderBooks.end()) {
+            return false; // 已存在
+        }
+        auto *newOrderBook = new OrderBook(instrument);
+        newOrderBook->setCrossCallback(
+            [this](Order* order) { this->processNewOrder(order); }
+        );
+        orderBooks[instrument] = newOrderBook;
+        instrumentToTradedPrice[instrument] = 0.0;
+    }
+    return true;
 }
 
 void MatchingEngine::removeOrderBook(const std::string &instrument)
 {
+    std::unique_lock lock(orderBooksMutex);
     auto iter = orderBooks.find(instrument);
     if (iter != orderBooks.end())
     {
@@ -74,7 +83,7 @@ auto MatchingEngine::processNewOrder(Order *order) -> std::vector<Trade>
     }
 
 
-    auto logger = Logger::getLogger(Matching_Engine_Config::MathingEngine::LOGGER_NAME);
+    auto logger = Logger::getLogger(matchingSystemConfig::mathingEngine::LOGGER_NAME);
     for (const auto& trade : trades) {
         logger->info(trade.toString());
     }
@@ -131,8 +140,9 @@ auto MatchingEngine::getLastTradePrice(const std::string &instrument) -> double
     return instrumentToTradedPrice[instrument];
 }
 
-auto MatchingEngine::getOrderBookForRead(const std::string &instrument) const -> const OrderBook *
+auto MatchingEngine::getOrderBookForRead(const std::string &instrument) -> const OrderBook *
 {
+    std::shared_lock lock(orderBooksMutex);
     const auto iter = orderBooks.find(instrument);
     return (iter != orderBooks.end()) ? iter->second : nullptr;
 }
@@ -337,6 +347,7 @@ auto MatchingEngine::matchOrder(Order *order) -> std::vector<Trade>
 
 auto MatchingEngine::getOrderBook(const std::string &instrument) -> OrderBook*
 {
+    std::unique_lock lock(orderBooksMutex);
     const auto iter = orderBooks.find(instrument);
     return (iter != orderBooks.end()) ? iter->second : nullptr;
 }

@@ -58,26 +58,20 @@ auto ProtocolParser::parseTCP(const std::string& rawData) -> Message
         bool isBuy = document["isBuy"].GetBool();
         std::string orderTypeStr = document["orderType"].GetString();
 
-        OrderType orderType;
-        if (orderTypeStr == "LIMIT")
-        {
-            orderType = OrderType::LIMIT;
-        }
-        else if (orderTypeStr == "MARKET")
-        {
-            orderType = OrderType::MARKET;
-        }
-        else if (orderTypeStr == "STOP")
-        {
-            orderType = OrderType::STOP;
-        }
-        else
-        {
+        static const std::unordered_map<std::string, OrderType> orderTypeMap = {
+            {"LIMIT", OrderType::LIMIT},
+            {"MARKET", OrderType::MARKET},
+            {"STOP", OrderType::STOP}
+        };
+
+        auto iter = orderTypeMap.find(orderTypeStr);
+        if (iter == orderTypeMap.end()) {
             throw std::invalid_argument("Unsupported order type: " + orderTypeStr);
         }
-        return Message::createAddOrderMessage(instrument, price, quantity, isBuy, orderType);
+
+        return Message::createAddOrderMessage(instrument, price, quantity, isBuy, iter->second);
     }
-    else if (typeStr == "MODIFY_ORDER") {
+    if (typeStr == "MODIFY_ORDER") {
         if (!document.HasMember("orderId") || !document["orderId"].IsUint() ||
             !document.HasMember("instrument") || !document["instrument"].IsString() ||
             !document.HasMember("newPrice") || !document["newPrice"].IsNumber() ||
@@ -92,7 +86,7 @@ auto ProtocolParser::parseTCP(const std::string& rawData) -> Message
 
         return Message::createModifyOrderMessage(orderId, instrument, newPrice, newQuantity);
     }
-    else if (typeStr == "CANCEL_ORDER") {
+    if (typeStr == "CANCEL_ORDER") {
         if (!document.HasMember("orderId") || !document["orderId"].IsUint() ||
             !document.HasMember("instrument") || !document["instrument"].IsString()) {
             throw std::invalid_argument("Missing required fields for CANCEL_ORDER in TCP data");
@@ -103,9 +97,7 @@ auto ProtocolParser::parseTCP(const std::string& rawData) -> Message
 
         return Message::createCancelOrderMessage(orderId, instrument);
     }
-    else {
-        throw std::invalid_argument("Unsupported message type: " + typeStr);
-    }
+    throw std::invalid_argument("Unsupported message type: " + typeStr);
 }
 
 auto ProtocolParser::serializeTCPTrades(const std::vector<Trade> &trades) -> std::string

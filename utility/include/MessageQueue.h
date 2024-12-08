@@ -18,22 +18,19 @@ public:
     auto operator=(MessageQueue&&) -> MessageQueue& = delete;
 
     void push(Message&& msg);
+    bool pop(Message& msg);
+    bool tryPop(Message& msg);
+    bool empty() const;
+    size_t size() const;
 
-    auto pop(Message& msg) -> bool;
-    /* 
-    * @param timeout: Used for testing scenario
-    */
-
-    auto tryPop(Message& msg) -> bool;
-
-    auto empty() const -> bool;
-
-    auto size() const -> size_t;
+    void shutdown();
+    bool isShutdown() const;
 
 private:
-    mutable std::mutex m_mutex;                // The mutex protecting the queue
-    std::condition_variable m_condVar;         // Condition variables are used to notify consumers
-    std::queue<Message> m_queue;               // Internal message queue
+    mutable std::mutex m_mutex;
+    std::condition_variable m_condVar;
+    std::queue<Message> m_queue;
+    bool m_shutdown = false;
 };
 
 #endif // ORDER_QUEUE_H

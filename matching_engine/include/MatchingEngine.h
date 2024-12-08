@@ -1,6 +1,7 @@
 #ifndef MATCHING_ENGINE_H
 #define MATCHING_ENGINE_H
 
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -12,7 +13,6 @@
 class MatchingEngine
 {
 public:
-    // Constructor, initializes the matching engine
     MatchingEngine();
     ~MatchingEngine();
 
@@ -23,7 +23,7 @@ public:
     auto operator=(const MatchingEngine&&) -> MatchingEngine& = delete;
 
     // Add a new Instrument or Remove an existing Instrument
-    void createNewOrderBook(const std::string &instrument);
+    auto createNewOrderBook(const std::string &instrument) -> bool;
     void removeOrderBook(const std::string &instrument);
 
     auto processNewOrder(Order *order) -> std::vector<Trade>;
@@ -36,7 +36,7 @@ public:
 
     auto getLastTradePrice(const std::string &instrument) -> double;
 
-    [[nodiscard]] auto getOrderBookForRead(const std::string &instrument) const -> const OrderBook*;
+    [[nodiscard]] auto getOrderBookForRead(const std::string &instrument) -> const OrderBook*;
 
     auto hasOrder(const std::string& instrument, unsigned int orderId) -> bool;
 
@@ -46,6 +46,8 @@ public:
 
 private:
 
+    std::shared_mutex orderBooksMutex;
+
     std::unordered_set<unsigned int> globalOrderIds;
 
     std::unordered_map<std::string, OrderBook *> orderBooks;
@@ -54,7 +56,6 @@ private:
     
     std::vector<Trade> trades;
 
-    // assistant functions
     auto processLimitOrder(Order *order) -> std::vector<Trade>;
     auto processMarketOrder(Order *order) -> std::vector<Trade>;
     auto processStopOrder(Order *order) -> std::vector<Trade>;

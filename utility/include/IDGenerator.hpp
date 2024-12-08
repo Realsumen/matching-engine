@@ -28,18 +28,25 @@ public:
         return tradeIDCounter.fetch_add(1, std::memory_order_relaxed);
     }
 
+    auto getNextClientID() -> unsigned int
+    {
+        return clientIDCounter.fetch_add(1, std::memory_order_relaxed);
+    }
+
     void reset()
     {
         orderIDCounter.store(1, std::memory_order_relaxed);
         tradeIDCounter.store(1, std::memory_order_relaxed);
+        clientIDCounter.store(1, std::memory_order_relaxed);
     }
 
 private:
     // Private constructor to prevent external instantiation
-    IDGenerator() : orderIDCounter(1), tradeIDCounter(1) {}
+    IDGenerator() : orderIDCounter(1), tradeIDCounter(1), clientIDCounter(1) {}
 
     std::atomic<unsigned int> orderIDCounter;
     std::atomic<unsigned int> tradeIDCounter;
+    std::atomic<unsigned int> clientIDCounter{};
 };
 
 #endif // MATCHING_ENGINE_ID_GENERATOR_H
